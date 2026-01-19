@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace AuthorizeService.Api.Entities
+namespace EKR_AuthorizeService.Entities
 {
     /// <summary>
     /// Сущность пользователя.
