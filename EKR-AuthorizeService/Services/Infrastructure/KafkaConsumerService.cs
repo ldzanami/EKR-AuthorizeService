@@ -1,8 +1,9 @@
 ﻿using Confluent.Kafka;
+using EKR_Shared;
 
 namespace EKR_AuthorizeService.Services.Infrastructure
 {
-    public class KafkaConsumerService : BackgroundService
+    public class KafkaConsumerService() : BackgroundService
     {
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {

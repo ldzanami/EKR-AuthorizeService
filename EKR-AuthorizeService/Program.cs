@@ -1,3 +1,4 @@
+using EKR_AuthorizeService.Api.Services.Auth;
 using EKR_AuthorizeService.Data;
 using EKR_AuthorizeService.Middlewares;
 using EKR_AuthorizeService.Repositories.Helpers;
@@ -9,8 +10,8 @@ using EKR_AuthorizeService.Services.Encriptoin;
 using EKR_AuthorizeService.Services.Infrastructure;
 using EKR_AuthorizeService.Services.Interfaces.Auth;
 using EKR_AuthorizeService.Services.Interfaces.Encription;
+using EKR_AuthorizeService.Services.Interfaces.Infrastructure;
 using Microsoft.EntityFrameworkCore;
-using SecureMessageManager.Api.Services.Auth;
 
 namespace EKR_AuthorizeService
 {
@@ -27,6 +28,8 @@ namespace EKR_AuthorizeService
             builder.Logging.ClearProviders();
             builder.Logging.AddConsole();
             builder.Logging.AddDebug();
+            builder.Services.AddControllers();
+            builder.Services.AddSwaggerGen();
 
             builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
             builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -37,6 +40,7 @@ namespace EKR_AuthorizeService
             builder.Services.AddScoped<IGeneratorService, GeneratorService>();
             builder.Services.AddScoped<IPasswordHashService, PasswordHashService>();
             builder.Services.AddScoped<ICheckExistRepository, CheckExistRepository>();
+            builder.Services.AddScoped<IKafkaProducerService, KafkaProducerService>();
             builder.Services.AddHostedService<KafkaConsumerService>();
 
             var app = builder.Build();
@@ -46,9 +50,12 @@ namespace EKR_AuthorizeService
             using (var scope = app.Services.CreateScope())
             {
                 var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-                db.Database.Migrate();
             }
 
+            app.UseSwagger();
+            app.UseSwaggerUI();
+
+            app.MapControllers();
             app.UseHttpsRedirection();
             app.UseRouting();
 

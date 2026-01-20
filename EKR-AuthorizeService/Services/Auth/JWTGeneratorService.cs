@@ -6,7 +6,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace SecureMessageManager.Api.Services.Auth
+namespace EKR_AuthorizeService.Api.Services.Auth
 {
     /// <summary>
     /// Cервис для генерации JWT токенов

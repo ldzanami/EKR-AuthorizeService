@@ -2,10 +2,11 @@
 using EKR_AuthorizeService.Repositories.Interfaces.User;
 using EKR_AuthorizeService.Services.Interfaces.Auth;
 using EKR_AuthorizeService.Services.Interfaces.Encription;
-using EKR_SharedShared.Auth.Post.Response;
-using EKR_SharedShared.Auth.Get.Response;
-using EKR_SharedShared.Auth.Post.Incoming;
-using EKR_SharedShared.Auxiliary.DeviceInfo;
+using EKR_Shared.Auth.Post.Response;
+using EKR_Shared.Auth.Get.Response;
+using EKR_Shared.Auth.Post.Incoming;
+using EKR_Shared.Auxiliary.DeviceInfo;
+using EKR_AuthorizeService.Services.Interfaces.Infrastructure;
 
 namespace EKR_AuthorizeService.Services.Auth
 {
@@ -16,8 +17,10 @@ namespace EKR_AuthorizeService.Services.Auth
                              IGeneratorService generatorService,
                              IPasswordHashService passwordHashService,
                              ISessionService sessionService,
-                             ISessionRepository sessionRepository) : IAuthService
+                             ISessionRepository sessionRepository,
+                             IKafkaProducerService kafkaProducerService) : IAuthService
     {
+        private readonly IKafkaProducerService _kafkaProducerService = kafkaProducerService;
         private readonly IUserRepository _userRepository = userRepository;
         private readonly IGeneratorService _generatorService = generatorService;
         private readonly IPasswordHashService _passwordHashService = passwordHashService;
@@ -97,14 +100,14 @@ namespace EKR_AuthorizeService.Services.Auth
                 await _sessionRepository.UpdateSessionAsync(session);
             }
 
-                return new AuthResponseDto
-                {
-                    SessionId = sessionId,
-                    AccessToken = accessToken,
-                    RefreshToken = refreshToken,
-                    UserId = user.Id,
-                    Username = user.Username
-                };
+            return new AuthResponseDto
+            {
+                SessionId = sessionId,
+                AccessToken = accessToken,
+                RefreshToken = refreshToken,
+                UserId = user.Id,
+                Username = user.Username
+            };
 
         }
 

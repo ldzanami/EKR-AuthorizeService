@@ -1,7 +1,7 @@
-﻿using EKR_SharedShared.Auth.Get.Response;
-using EKR_SharedShared.Auth.Post.Incoming;
-using EKR_SharedShared.Auth.Post.Response;
-using EKR_SharedShared.Auxiliary.DeviceInfo;
+﻿using EKR_Shared.Auth.Get.Response;
+using EKR_Shared.Auth.Post.Incoming;
+using EKR_Shared.Auth.Post.Response;
+using EKR_Shared.Auxiliary.DeviceInfo;
 
 namespace EKR_AuthorizeService.Services.Interfaces.Auth
 {
