@@ -38,19 +38,5 @@ namespace EKR_AuthorizeService.Repositories.Helpers
                 throw new KeyNotFoundException($"Сессии с таким Id: '{sessionId}' не существует.");
             }
         }
-
-
-        /// <summary>
-        /// Асинхронно проверяет наличие лога в БД.
-        /// </summary>
-        /// <param name="logId">Id лога.</param>
-        /// <exception cref="KeyNotFoundException">В случае если лог в БД не найден.</exception>
-        public async Task IsLogExist(Guid logId)
-        {
-            if (!await _appDbContext.Logs.AnyAsync(l => l.Id == logId))
-            {
-                throw new KeyNotFoundException($"Лога с таким Id: '{logId}' не существует.");
-            }
-        }
     }
 }

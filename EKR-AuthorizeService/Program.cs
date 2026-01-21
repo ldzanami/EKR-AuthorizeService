@@ -55,7 +55,7 @@ namespace EKR_AuthorizeService
                 builder.Services.AddScoped<ICheckExistRepository, CheckExistRepository>();
                 builder.Services.AddScoped<IKafkaProducerService, KafkaProducerService>();
                 builder.Services.AddHostedService<KafkaConsumerService>();
-                builder.Services.AddScoped<IKafkaMessageHandler, KafkaMessageHandler>();
+                builder.Services.AddScoped<IKafkaMessageHandler<string, string>, KafkaMessageHandler>();
                 builder.Services.AddScoped<IRSAEncryptorService, RSAEncryptorService>();
                 builder.Services.AddScoped<IAESEncryptorService, AESEncryptorService>();
 
@@ -70,11 +70,10 @@ namespace EKR_AuthorizeService
 
                 var app = builder.Build();
 
-                app.UseMiddleware<ExceptionHandlingMiddleware>();
-
                 using (var scope = app.Services.CreateScope())
                 {
                     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                    db.Database.Migrate();
                 }
 
                 app.Run();

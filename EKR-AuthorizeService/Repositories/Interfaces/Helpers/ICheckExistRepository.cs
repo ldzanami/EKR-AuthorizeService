@@ -19,13 +19,5 @@
         /// <param name="sessionId">Id сессии.</param>
         /// <exception cref="KeyNotFoundException">В случае если сессия в БД не найдена.</exception>
         Task IsSessionExist(Guid sessionId);
-
-
-        /// <summary>
-        /// Асинхронно проверяет наличие лога в БД.
-        /// </summary>
-        /// <param name="logId">Id лога.</param>
-        /// <exception cref="KeyNotFoundException">В случае если лог в БД не найден.</exception>
-        Task IsLogExist(Guid logId);
     }
 }

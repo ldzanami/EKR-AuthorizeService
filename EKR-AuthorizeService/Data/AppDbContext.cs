@@ -20,11 +20,6 @@ namespace EKR_AuthorizeService.Data
         public DbSet<Session> Sessions { get; set; }
 
         /// <summary>
-        /// Сущность Logs.
-        /// </summary>
-        public DbSet<Log> Logs { get; set; }
-
-        /// <summary>
         /// Особенности содзания схемы БД.
         /// </summary>
         /// <param name="modelBuilder">Объект проектировщика БД.</param>

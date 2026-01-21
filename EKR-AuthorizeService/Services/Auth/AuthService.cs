@@ -31,82 +31,100 @@ namespace EKR_AuthorizeService.Services.Auth
         /// Асинхронно регистрирует нового пользователя в системе.
         /// </summary>
         /// <param name="dto">Данные для регистрации пользователя.</param>
-        public async Task<GetUserResponseDto> RegisterAsync(RegisterRequestDto dto)
+        /// <param name="requestId">Id запроса.</param>
+        public async Task<GetUserResponseDto> RegisterAsync(RegisterRequestDto dto, string requestId)
         {
-            if (await _userRepository.GetUserByUsernameAsync(dto.Username.ToUpper()) != null)
+            try
             {
-                throw new InvalidOperationException("Пользователь с таким именем уже существует.");
+                if (await _userRepository.GetUserByUsernameAsync(dto.Username.ToUpper()) != null)
+                {
+                    throw new InvalidOperationException("Пользователь с таким именем уже существует.");
+                }
+
+                var salt = _generatorService.GenerateSalt(32);
+
+                User user = new()
+                {
+                    Username = dto.Username,
+                    UsernameNormalized = dto.Username.ToUpper(),
+                    Salt = salt,
+                    PasswordHash = _passwordHashService.HashPassword(dto.Password, salt),
+                };
+
+                await _userRepository.CreateUserAsync(user);
+
+                return new GetUserResponseDto
+                {
+                    Id = user.Id,
+                    Username = user.Username
+                };
             }
-
-            var salt = _generatorService.GenerateSalt(32);
-
-            User user = new()
+            catch(Exception ex)
             {
-                Username = dto.Username,
-                UsernameNormalized = dto.Username.ToUpper(),
-                Salt = salt,
-                PasswordHash = _passwordHashService.HashPassword(dto.Password, salt),
-            };
-
-            await _userRepository.CreateUserAsync(user);
-
-            return new GetUserResponseDto
-            {
-                Id = user.Id,
-                Username = user.Username
-            };
+                await _kafkaProducerService.GiveAnswerAsync(new { ex.Message, Type = ex.GetType() }.ToString()!, partition: requestId);
+                throw;
+            }
         }
 
         /// <summary>
         /// Асинхронно авторизует пользователя и выдает JWT токен.
         /// </summary>
         /// <param name="dto">Данные для авторизации пользователя.</param>
+        /// <param name="requestId">Id запроса.</param>
         /// <returns>JWT токен при успешной авторизации.</returns>
-        public async Task<AuthResponseDto> AuthorizationAsync(AuthorizationDto dto)
+        public async Task<AuthResponseDto> AuthorizationAsync(AuthorizationDto dto, string requestId)
         {
-            var user = await _userRepository.GetUserByUsernameAsync(dto.Username);
-
-            if (user == null)
+            try
             {
-                throw new UnauthorizedAccessException("Неверный логин или пароль.");
+                var user = await _userRepository.GetUserByUsernameAsync(dto.Username);
+
+                if (user == null)
+                {
+                    throw new UnauthorizedAccessException("Неверный логин или пароль.");
+                }
+
+                bool isPasswordValid = _userRepository.VerifyPassword(dto.Password, user.PasswordHash);
+
+                if (!isPasswordValid)
+                {
+                    throw new UnauthorizedAccessException("Неверный логин или пароль.");
+                }
+
+                var session = (await _sessionRepository.GetUserSessionsAsync(user.Id)).FirstOrDefault(s => ((DeviceInfoDto)s.DeviceInfo).DeviceId == dto.DeviceInfo.DeviceId);
+
+                string accessToken, refreshToken;
+                Guid sessionId;
+
+                if (session == null)
+                {
+                    (accessToken, refreshToken, sessionId) = await _sessionService.CreateSessionAsync(user, dto.DeviceInfo);
+                }
+                else if ((DeviceInfoDto)session.DeviceInfo != dto.DeviceInfo || dto.RefreshToken == null)
+                {
+                    await _sessionRepository.RemoveSessionAsync(session);
+                    (accessToken, refreshToken, sessionId) = await _sessionService.CreateSessionAsync(user, dto.DeviceInfo);
+                }
+                else
+                {
+                    session.IsRevoked = false;
+                    (accessToken, refreshToken, sessionId) = await _sessionService.RefreshAsync(dto.RefreshToken);
+                    await _sessionRepository.UpdateSessionAsync(session);
+                }
+
+                return new AuthResponseDto
+                {
+                    SessionId = sessionId,
+                    AccessToken = accessToken,
+                    RefreshToken = refreshToken,
+                    UserId = user.Id,
+                    Username = user.Username
+                };
             }
-
-            bool isPasswordValid = _userRepository.VerifyPassword(dto.Password, user.PasswordHash);
-
-            if (!isPasswordValid)
+            catch (Exception ex)
             {
-                throw new UnauthorizedAccessException("Неверный логин или пароль.");
+                await _kafkaProducerService.GiveAnswerAsync(new { ex.Message, Type = ex.GetType() }.ToString()!, partition: requestId);
+                throw;
             }
-
-            var session = (await _sessionRepository.GetUserSessionsAsync(user.Id)).FirstOrDefault(s => ((DeviceInfoDto)s.DeviceInfo).DeviceId == dto.DeviceInfo.DeviceId);
-
-            string accessToken, refreshToken;
-            Guid sessionId;
-
-            if (session == null)
-            {
-                (accessToken, refreshToken, sessionId) = await _sessionService.CreateSessionAsync(user, dto.DeviceInfo);
-            }
-            else if((DeviceInfoDto)session.DeviceInfo != dto.DeviceInfo || dto.RefreshToken == null)
-            {
-                await _sessionRepository.RemoveSessionAsync(session);
-                (accessToken, refreshToken, sessionId) = await _sessionService.CreateSessionAsync(user, dto.DeviceInfo);
-            }
-            else
-            {
-                session.IsRevoked = false;
-                (accessToken, refreshToken, sessionId) = await _sessionService.RefreshAsync(dto.RefreshToken);
-                await _sessionRepository.UpdateSessionAsync(session);
-            }
-
-            return new AuthResponseDto
-            {
-                SessionId = sessionId,
-                AccessToken = accessToken,
-                RefreshToken = refreshToken,
-                UserId = user.Id,
-                Username = user.Username
-            };
 
         }
 
@@ -114,64 +132,108 @@ namespace EKR_AuthorizeService.Services.Auth
         /// Асинхронное обновление токенов.
         /// </summary>
         /// <param name="incomingRefreshToken">Текущий refresh токен.</param>
+        /// <param name="requestId">Id запроса.</param>
         /// <returns>Dto с новыми токенами.</returns>
-        public async Task<RefreshDto> RefreshAsync(string incomingRefreshToken)
+        public async Task<RefreshDto> RefreshAsync(string incomingRefreshToken, string requestId)
         {
-            (string accessToken, string refreshToken, Guid sessionId) = await _sessionService.RefreshAsync(incomingRefreshToken);
-
-            return new RefreshDto
+            try
             {
-                AccessToken = accessToken,
-                RefreshToken = refreshToken,
-                SessionId = sessionId
-            };
+                (string accessToken, string refreshToken, Guid sessionId) = await _sessionService.RefreshAsync(incomingRefreshToken);
+
+                return new RefreshDto
+                {
+                    AccessToken = accessToken,
+                    RefreshToken = refreshToken,
+                    SessionId = sessionId
+                };
+            }
+            catch (Exception ex)
+            {
+                await _kafkaProducerService.GiveAnswerAsync(new { ex.Message, Type = ex.GetType() }.ToString()!, partition: requestId);
+                throw;
+            }
         }
 
         /// <summary>
         /// Асинхронный разлогин конкретной сессии.
         /// </summary>
         /// <param name="sessionId">Id сессии, которую надо прервать.</param>
-        public async Task RevokeSessionAsync(Guid sessionId)
+        /// <param name="requestId">Id запроса.</param>
+        public async Task RevokeSessionAsync(Guid sessionId, string requestId)
         {
-            await _sessionService.RevokeSessionAsync(sessionId);
+            try
+            {
+                await _sessionService.RevokeSessionAsync(sessionId);
+            }
+            catch (Exception ex)
+            {
+                await _kafkaProducerService.GiveAnswerAsync(new { ex.Message, Type = ex.GetType() }.ToString()!, partition: requestId);
+                throw;
+            }
         }
 
         /// <summary>
         /// Асинхронный разлогин всех сессий пользователя, кроме указанной.
         /// </summary>
-        /// <param name="userId">Id пользователя.</param>
-        /// <param name="keepSessionId">Id сессии, которую нужно оставить.</param>
-        public async Task RevokeOtherSessionsAsync(RevokeOtherSessionsDto dto)
+        /// <param name="dto">Id пользователя + Id сессии, которую надо оставить.</param>
+        /// <param name="requestId">Id запроса.</param>
+        public async Task RevokeOtherSessionsAsync(RevokeOtherSessionsDto dto, string requestId)
         {
-            await _sessionService.RevokeOtherSessionsAsync(dto.UserId, dto.KeepSessionId);
+            try
+            {
+                await _sessionService.RevokeOtherSessionsAsync(dto.UserId, dto.KeepSessionId);
+            }
+            catch (Exception ex)
+            {
+                await _kafkaProducerService.GiveAnswerAsync(new { ex.Message, Type = ex.GetType() }.ToString()!, partition: requestId);
+                throw;
+            }
         }
 
         /// <summary>
         /// Асинхронный разлогин всех сессий пользователя.
         /// </summary>
         /// <param name="userId">Id пользователя.</param>
-        public async Task RevokeAllSessionsAsync(Guid userId)
+        /// <param name="requestId">Id запроса.</param>
+        public async Task RevokeAllSessionsAsync(Guid userId, string requestId)
         {
-            await _sessionService.RevokeAllSessionsAsync(userId);
+            try
+            {
+                await _sessionService.RevokeAllSessionsAsync(userId);
+            }
+            catch (Exception ex)
+            {
+                await _kafkaProducerService.GiveAnswerAsync(new { ex.Message, Type = ex.GetType() }.ToString()!, partition: requestId);
+                throw;
+            }
         }
 
         /// <summary>
         /// Асинхронно получает коллекцию активных сессий пользователя.
         /// </summary>
         /// <param name="userId">Id пользователя.</param>
+        /// <param name="requestId">Id запроса.</param>
         /// <returns>Коллекция активных сессий пользователя.</returns>
-        public async Task<ICollection<GetSessionResponseDto>> GetActiveUserSessionsAsync(Guid userId)
+        public async Task<ICollection<GetSessionResponseDto>> GetActiveUserSessionsAsync(Guid userId, string requestId)
         {
-            return (await _sessionRepository.GetActiveUserSessionsAsync(userId)).Select(s => new GetSessionResponseDto()
+            try
             {
-                CreatedAt = s.CreatedAt,
-                DeviceInfo = s.DeviceInfo,
-                ExpiresAt = s.ExpiresAt,
-                Id = s.Id,
-                IsRevoked = s.IsRevoked,
-                RefreshToken = s.RefreshToken,
-                UserId = s.UserId
-            }).ToList();
+                return (await _sessionRepository.GetActiveUserSessionsAsync(userId)).Select(s => new GetSessionResponseDto()
+                {
+                    CreatedAt = s.CreatedAt,
+                    DeviceInfo = s.DeviceInfo,
+                    ExpiresAt = s.ExpiresAt,
+                    Id = s.Id,
+                    IsRevoked = s.IsRevoked,
+                    RefreshToken = s.RefreshToken,
+                    UserId = s.UserId
+                }).ToList();
+            }
+            catch (Exception ex)
+            {
+                await _kafkaProducerService.GiveAnswerAsync(new { ex.Message, Type = ex.GetType() }.ToString()!, partition: requestId);
+                throw;
+            }
         }
     }
 }
