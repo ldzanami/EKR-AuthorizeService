@@ -29,7 +29,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="keys\" />
+    <Folder Include="Новая папка\" />
   </ItemGroup>
 
 </Project>

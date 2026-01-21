@@ -17,6 +17,7 @@ using EKR_Shared.Services.Interfaces.Encryption;
 using EKR_Shared.Services.Interfaces.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using System.IO;
 using System.Security.Cryptography;
 
 namespace EKR_AuthorizeService
@@ -61,6 +62,12 @@ namespace EKR_AuthorizeService
 
                 Log.Information("Generate RSA keys");
                 using var rsa = RSA.Create(2048);
+
+                var dir = Path.GetDirectoryName("keys/");
+                if (!Directory.Exists(dir))
+                {
+                    Directory.CreateDirectory(dir!);
+                }
 
                 var privateKeyPem = rsa.ExportRSAPrivateKeyPem();
                 File.WriteAllText("keys/private.pem", privateKeyPem);
