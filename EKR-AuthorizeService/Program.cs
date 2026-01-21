@@ -1,17 +1,23 @@
 using EKR_AuthorizeService.Api.Services.Auth;
 using EKR_AuthorizeService.Data;
-using EKR_AuthorizeService.Middlewares;
+using EKR_AuthorizeService.Handlers;
 using EKR_AuthorizeService.Repositories.Helpers;
 using EKR_AuthorizeService.Repositories.Interfaces.Helpers;
 using EKR_AuthorizeService.Repositories.Interfaces.User;
 using EKR_AuthorizeService.Repositories.User;
 using EKR_AuthorizeService.Services.Auth;
 using EKR_AuthorizeService.Services.Encriptoin;
-using EKR_AuthorizeService.Services.Infrastructure;
 using EKR_AuthorizeService.Services.Interfaces.Auth;
 using EKR_AuthorizeService.Services.Interfaces.Encription;
-using EKR_AuthorizeService.Services.Interfaces.Infrastructure;
+using EKR_Shared.Handlers;
+using EKR_Shared.Middlewares;
+using EKR_Shared.Services.Encryption;
+using EKR_Shared.Services.Infrastructure;
+using EKR_Shared.Services.Interfaces.Encryption;
+using EKR_Shared.Services.Interfaces.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
+using System.Security.Cryptography;
 
 namespace EKR_AuthorizeService
 {
@@ -19,47 +25,68 @@ namespace EKR_AuthorizeService
     {
         public static void Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
+            Log.Logger = new LoggerConfiguration().MinimumLevel.Information()
+                                                  .WriteTo.Console()
+                                                  .WriteTo.File(
+                                                                    "logs/app-.log",
+                                                                    rollingInterval: RollingInterval.Day,
+                                                                    retainedFileCountLimit: 7,
+                                                                    fileSizeLimitBytes: 10_000_000,
+                                                                    rollOnFileSizeLimit: true
+                                                                )
+                                                  .CreateLogger();
 
-            builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                                 .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
-                                 .AddEnvironmentVariables();
-
-            builder.Logging.ClearProviders();
-            builder.Logging.AddConsole();
-            builder.Logging.AddDebug();
-            builder.Services.AddControllers();
-            builder.Services.AddSwaggerGen();
-
-            builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
-            builder.Services.AddScoped<IUserRepository, UserRepository>();
-            builder.Services.AddScoped<IAuthService, AuthService>();
-            builder.Services.AddScoped<IJWTGeneratorService, JWTGeneratorService>();
-            builder.Services.AddScoped<ISessionService, SessionService>();
-            builder.Services.AddScoped<ISessionRepository, SessionRepository>();
-            builder.Services.AddScoped<IGeneratorService, GeneratorService>();
-            builder.Services.AddScoped<IPasswordHashService, PasswordHashService>();
-            builder.Services.AddScoped<ICheckExistRepository, CheckExistRepository>();
-            builder.Services.AddScoped<IKafkaProducerService, KafkaProducerService>();
-            builder.Services.AddHostedService<KafkaConsumerService>();
-
-            var app = builder.Build();
-
-            app.UseMiddleware<ExceptionHandlingMiddleware>();
-
-            using (var scope = app.Services.CreateScope())
+            try
             {
-                var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                Log.Information("Starting web application");
+                var builder = WebApplication.CreateBuilder(args);
+
+                builder.Logging.ClearProviders();
+
+                builder.Services.AddSerilog();
+                builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
+                builder.Services.AddScoped<IUserRepository, UserRepository>();
+                builder.Services.AddScoped<IAuthService, AuthService>();
+                builder.Services.AddScoped<IJWTGeneratorService, JWTGeneratorService>();
+                builder.Services.AddScoped<ISessionService, SessionService>();
+                builder.Services.AddScoped<ISessionRepository, SessionRepository>();
+                builder.Services.AddScoped<IGeneratorService, GeneratorService>();
+                builder.Services.AddScoped<IPasswordHashService, PasswordHashService>();
+                builder.Services.AddScoped<ICheckExistRepository, CheckExistRepository>();
+                builder.Services.AddScoped<IKafkaProducerService, KafkaProducerService>();
+                builder.Services.AddHostedService<KafkaConsumerService>();
+                builder.Services.AddScoped<IKafkaMessageHandler, KafkaMessageHandler>();
+                builder.Services.AddScoped<IRSAEncryptorService, RSAEncryptorService>();
+                builder.Services.AddScoped<IAESEncryptorService, AESEncryptorService>();
+
+                Log.Information("Generate RSA keys");
+                using var rsa = RSA.Create(2048);
+
+                var privateKeyPem = rsa.ExportRSAPrivateKeyPem();
+                File.WriteAllText("keys/private.pem", privateKeyPem);
+
+                var publicKeyPem = rsa.ExportRSAPublicKeyPem();
+                File.WriteAllText("keys/public.pem", publicKeyPem);
+
+                var app = builder.Build();
+
+                app.UseMiddleware<ExceptionHandlingMiddleware>();
+
+                using (var scope = app.Services.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                }
+
+                app.Run();
             }
-
-            app.UseSwagger();
-            app.UseSwaggerUI();
-
-            app.MapControllers();
-            app.UseHttpsRedirection();
-            app.UseRouting();
-
-            app.Run();
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Application terminated unexpectedly");
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
         }
     }
 }

@@ -20,9 +20,8 @@ namespace EKR_AuthorizeService.Services.Interfaces.Auth
         /// Асинхронно авторизует пользователя и выдает JWT токен.
         /// </summary>
         /// <param name="dto">Данные для авторизации пользователя.</param>
-        /// <param name="deviceInfo">Информация об устройстве.</param>
         /// <returns>JWT токен при успешной авторизации.</returns>
-        Task<AuthResponseDto> AuthorizationAsync(AuthorizationDto dto, DeviceInfoDto deviceInfo);
+        Task<AuthResponseDto> AuthorizationAsync(AuthorizationDto dto);
 
         /// <summary>
         /// Асинхронное обновление токенов.
@@ -42,7 +41,7 @@ namespace EKR_AuthorizeService.Services.Interfaces.Auth
         /// </summary>
         /// <param name="userId">Id пользователя.</param>
         /// <param name="keepSessionId">Id сессии, которую нужно оставить.</param>
-        Task RevokeOtherSessionsAsync(Guid userId, Guid keepSessionId);
+        Task RevokeOtherSessionsAsync(RevokeOtherSessionsDto dto);
 
         /// <summary>
         /// Асинхронный разлогин всех сессий пользователя.

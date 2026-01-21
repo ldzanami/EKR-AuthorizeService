@@ -6,7 +6,7 @@ using EKR_Shared.Auth.Post.Response;
 using EKR_Shared.Auth.Get.Response;
 using EKR_Shared.Auth.Post.Incoming;
 using EKR_Shared.Auxiliary.DeviceInfo;
-using EKR_AuthorizeService.Services.Interfaces.Infrastructure;
+using EKR_Shared.Services.Interfaces.Infrastructure;
 
 namespace EKR_AuthorizeService.Services.Auth
 {
@@ -61,9 +61,8 @@ namespace EKR_AuthorizeService.Services.Auth
         /// Асинхронно авторизует пользователя и выдает JWT токен.
         /// </summary>
         /// <param name="dto">Данные для авторизации пользователя.</param>
-        /// <param name="deviceInfo">Информация об устройстве.</param>
         /// <returns>JWT токен при успешной авторизации.</returns>
-        public async Task<AuthResponseDto> AuthorizationAsync(AuthorizationDto dto, DeviceInfoDto deviceInfo)
+        public async Task<AuthResponseDto> AuthorizationAsync(AuthorizationDto dto)
         {
             var user = await _userRepository.GetUserByUsernameAsync(dto.Username);
 
@@ -79,19 +78,19 @@ namespace EKR_AuthorizeService.Services.Auth
                 throw new UnauthorizedAccessException("Неверный логин или пароль.");
             }
 
-            var session = (await _sessionRepository.GetUserSessionsAsync(user.Id)).FirstOrDefault(s => ((DeviceInfoDto)s.DeviceInfo).DeviceId == deviceInfo.DeviceId);
+            var session = (await _sessionRepository.GetUserSessionsAsync(user.Id)).FirstOrDefault(s => ((DeviceInfoDto)s.DeviceInfo).DeviceId == dto.DeviceInfo.DeviceId);
 
             string accessToken, refreshToken;
             Guid sessionId;
 
             if (session == null)
             {
-                (accessToken, refreshToken, sessionId) = await _sessionService.CreateSessionAsync(user, deviceInfo);
+                (accessToken, refreshToken, sessionId) = await _sessionService.CreateSessionAsync(user, dto.DeviceInfo);
             }
-            else if((DeviceInfoDto)session.DeviceInfo != deviceInfo || dto.RefreshToken == null)
+            else if((DeviceInfoDto)session.DeviceInfo != dto.DeviceInfo || dto.RefreshToken == null)
             {
                 await _sessionRepository.RemoveSessionAsync(session);
-                (accessToken, refreshToken, sessionId) = await _sessionService.CreateSessionAsync(user, deviceInfo);
+                (accessToken, refreshToken, sessionId) = await _sessionService.CreateSessionAsync(user, dto.DeviceInfo);
             }
             else
             {
@@ -142,9 +141,9 @@ namespace EKR_AuthorizeService.Services.Auth
         /// </summary>
         /// <param name="userId">Id пользователя.</param>
         /// <param name="keepSessionId">Id сессии, которую нужно оставить.</param>
-        public async Task RevokeOtherSessionsAsync(Guid userId, Guid keepSessionId)
+        public async Task RevokeOtherSessionsAsync(RevokeOtherSessionsDto dto)
         {
-            await _sessionService.RevokeOtherSessionsAsync(userId, keepSessionId);
+            await _sessionService.RevokeOtherSessionsAsync(dto.UserId, dto.KeepSessionId);
         }
 
         /// <summary>
