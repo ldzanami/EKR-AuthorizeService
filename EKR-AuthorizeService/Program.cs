@@ -10,6 +10,7 @@ using EKR_AuthorizeService.Services.Encriptoin;
 using EKR_AuthorizeService.Services.Interfaces.Auth;
 using EKR_AuthorizeService.Services.Interfaces.Encription;
 using EKR_Shared.Handlers;
+using EKR_Shared.Handlers.Interfaces;
 using EKR_Shared.Middlewares;
 using EKR_Shared.Services.Encryption;
 using EKR_Shared.Services.Infrastructure;
@@ -59,6 +60,13 @@ namespace EKR_AuthorizeService
                 builder.Services.AddScoped<IKafkaMessageHandler<string, string>, KafkaMessageHandler>();
                 builder.Services.AddScoped<IRSAEncryptorService, RSAEncryptorService>();
                 builder.Services.AddScoped<IAESEncryptorService, AESEncryptorService>();
+                builder.Services.AddScoped<ICommandHandler, AuthHandler>();
+                builder.Services.AddScoped<ICommandHandler, GetActiveSessionsHandler>();
+                builder.Services.AddScoped<ICommandHandler, RefreshHandler>();
+                builder.Services.AddScoped<ICommandHandler, RegisterHandler>();
+                builder.Services.AddScoped<ICommandHandler, RevokeAllHandler>();
+                builder.Services.AddScoped<ICommandHandler, RevokeHandler>();
+                builder.Services.AddScoped<ICommandHandler, RevokeOthersHandler>();
 
                 Log.Information("Generate RSA keys");
                 using var rsa = RSA.Create(2048);
