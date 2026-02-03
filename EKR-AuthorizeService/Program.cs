@@ -60,13 +60,14 @@ namespace EKR_AuthorizeService
                 builder.Services.AddScoped<IKafkaMessageHandler<string, string>, KafkaMessageHandler>();
                 builder.Services.AddScoped<IRSAEncryptorService, RSAEncryptorService>();
                 builder.Services.AddScoped<IAESEncryptorService, AESEncryptorService>();
-                builder.Services.AddScoped<ICommandHandler, AuthHandler>();
-                builder.Services.AddScoped<ICommandHandler, GetActiveSessionsHandler>();
-                builder.Services.AddScoped<ICommandHandler, RefreshHandler>();
-                builder.Services.AddScoped<ICommandHandler, RegisterHandler>();
-                builder.Services.AddScoped<ICommandHandler, RevokeAllHandler>();
-                builder.Services.AddScoped<ICommandHandler, RevokeHandler>();
-                builder.Services.AddScoped<ICommandHandler, RevokeOthersHandler>();
+                builder.Services.AddScoped<IPostCommandHandler, AuthHandler>();
+                builder.Services.AddScoped<IPostCommandHandler, GetActiveSessionsHandler>();
+                builder.Services.AddScoped<IPostCommandHandler, RefreshHandler>();
+                builder.Services.AddScoped<IPostCommandHandler, RegisterHandler>();
+                builder.Services.AddScoped<IPostCommandHandler, RevokeAllHandler>();
+                builder.Services.AddScoped<IPostCommandHandler, RevokeHandler>();
+                builder.Services.AddScoped<IPostCommandHandler, RevokeOthersHandler>();
+                builder.Services.AddScoped<IGetCommandHandler, GetPublicKeyHandler>();
 
                 Log.Information("Generate RSA keys");
                 using var rsa = RSA.Create(2048);

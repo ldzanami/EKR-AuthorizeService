@@ -8,7 +8,7 @@ using System.Text.Json;
 
 namespace EKR_AuthorizeService.Handlers
 {
-    public class RefreshHandler(IAuthService authService) : ICommandHandler
+    public class RefreshHandler(IAuthService authService) : IPostCommandHandler
     {
         public string CommandType => AuthCommands.Refresh;
 

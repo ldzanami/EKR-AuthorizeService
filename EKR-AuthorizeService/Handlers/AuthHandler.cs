@@ -6,7 +6,7 @@ using EKR_Shared.Data;
 
 namespace EKR_AuthorizeService.Handlers
 {
-    public class AuthHandler(IAuthService authService) : ICommandHandler
+    public class AuthHandler(IAuthService authService) : IPostCommandHandler
     {
         public string CommandType => AuthCommands.Authorize;
 

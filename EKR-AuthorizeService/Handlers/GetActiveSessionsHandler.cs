@@ -4,7 +4,7 @@ using EKR_Shared.Handlers.Interfaces;
 
 namespace EKR_AuthorizeService.Handlers
 {
-    public class GetActiveSessionsHandler(IAuthService authService) : ICommandHandler
+    public class GetActiveSessionsHandler(IAuthService authService) : IPostCommandHandler
     {
         public string CommandType => AuthCommands.GetActive;
 

@@ -9,7 +9,7 @@ using System.Text.Json;
 
 namespace EKR_AuthorizeService.Handlers
 {
-    public class RegisterHandler(IAuthService authService) : ICommandHandler
+    public class RegisterHandler(IAuthService authService) : IPostCommandHandler
     {
         public string CommandType => AuthCommands.Register;
 

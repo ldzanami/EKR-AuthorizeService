@@ -6,7 +6,7 @@ using System.Text.Json;
 
 namespace EKR_AuthorizeService.Handlers
 {
-    public class RevokeOthersHandler(IAuthService authService) : ICommandHandler
+    public class RevokeOthersHandler(IAuthService authService) : IPostCommandHandler
     {
         public string CommandType => AuthCommands.RevokeOthers;
 

@@ -4,7 +4,7 @@ using EKR_Shared.Handlers.Interfaces;
 
 namespace EKR_AuthorizeService.Handlers
 {
-    public class RevokeAllHandler(IAuthService authService) : ICommandHandler
+    public class RevokeAllHandler(IAuthService authService) : IPostCommandHandler
     {
         public string CommandType => AuthCommands.RevokeAll;
 
