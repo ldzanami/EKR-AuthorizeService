@@ -12,7 +12,17 @@ namespace EKR_AuthorizeService.Handlers
             string requestId,
             CancellationToken ct)
         {
-            return new { Key = File.ReadAllText("keys/public.pem"), RequestId = requestId };
+            string pem = File.ReadAllText("keys/public.pem");
+
+            string base64 = pem
+                .Replace("-----BEGIN RSA PUBLIC KEY-----", "")
+                .Replace("-----END RSA PUBLIC KEY-----", "")
+                .Replace("\r", "")
+                .Replace("\n", "")
+                .Trim();
+            byte[] der = Convert.FromBase64String(base64);
+
+            return new { Key = der, RequestId = requestId };
         }
     }
 }
