@@ -32,9 +32,9 @@
         public bool IsRevoked { get; set; }
 
         /// <summary>
-        /// Информация об устройстве.
+        /// Информация о соединении.
         /// </summary>
-        public string DeviceInfo { get; set; }
+        public string ConnectionInfo { get; set; }
 
         /// <summary>
         /// Дата создания сессии.

@@ -59,7 +59,7 @@ namespace EKR_AuthorizeService.Services.Auth
                 RefreshToken = refreshHash,
                 ExpiresAt = DateTime.UtcNow + _refreshLifetime,
                 IsRevoked = false,
-                DeviceInfo = deviceInfo,
+                ConnectionInfo = deviceInfo,
                 CreatedAt = DateTime.UtcNow
             };
 

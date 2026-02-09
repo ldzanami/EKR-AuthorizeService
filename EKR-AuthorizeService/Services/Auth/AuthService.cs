@@ -5,7 +5,7 @@ using EKR_AuthorizeService.Services.Interfaces.Encription;
 using EKR_Shared.Auth.Post.Response;
 using EKR_Shared.Auth.Get.Response;
 using EKR_Shared.Auth.Post.Incoming;
-using EKR_Shared.Auxiliary.DeviceInfo;
+using EKR_Shared.Auxiliary;
 using EKR_Shared.Services.Interfaces.Infrastructure;
 
 namespace EKR_AuthorizeService.Services.Auth
@@ -90,19 +90,19 @@ namespace EKR_AuthorizeService.Services.Auth
                     throw new UnauthorizedAccessException("Неверный логин или пароль.");
                 }
 
-                var session = (await _sessionRepository.GetUserSessionsAsync(user.Id)).FirstOrDefault(s => ((DeviceInfoDto)s.DeviceInfo).DeviceId == dto.DeviceInfo.DeviceId);
+                var session = (await _sessionRepository.GetUserSessionsAsync(user.Id)).FirstOrDefault(s => (ConnectionInfoDto)s.ConnectionInfo == dto.ConnectionInfo);
 
                 string accessToken, refreshToken;
                 Guid sessionId;
 
                 if (session == null)
                 {
-                    (accessToken, refreshToken, sessionId) = await _sessionService.CreateSessionAsync(user, dto.DeviceInfo);
+                    (accessToken, refreshToken, sessionId) = await _sessionService.CreateSessionAsync(user, dto.ConnectionInfo);
                 }
-                else if ((DeviceInfoDto)session.DeviceInfo != dto.DeviceInfo || dto.RefreshToken == null)
+                else if ((ConnectionInfoDto)session.ConnectionInfo != dto.ConnectionInfo || dto.RefreshToken == null)
                 {
                     await _sessionRepository.RemoveSessionAsync(session);
-                    (accessToken, refreshToken, sessionId) = await _sessionService.CreateSessionAsync(user, dto.DeviceInfo);
+                    (accessToken, refreshToken, sessionId) = await _sessionService.CreateSessionAsync(user, dto.ConnectionInfo);
                 }
                 else
                 {
@@ -221,7 +221,7 @@ namespace EKR_AuthorizeService.Services.Auth
                 return (await _sessionRepository.GetActiveUserSessionsAsync(userId)).Select(s => new GetSessionResponseDto()
                 {
                     CreatedAt = s.CreatedAt,
-                    DeviceInfo = s.DeviceInfo,
+                    DeviceInfo = s.ConnectionInfo,
                     ExpiresAt = s.ExpiresAt,
                     Id = s.Id,
                     IsRevoked = s.IsRevoked,
