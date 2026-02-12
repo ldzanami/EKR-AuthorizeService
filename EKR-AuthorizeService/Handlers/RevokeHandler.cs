@@ -13,7 +13,7 @@ namespace EKR_AuthorizeService.Handlers
         private readonly IAuthService _authService = authService;
 
         public async Task<object?> HandleAsync(
-            byte[] decryptedContent,
+            string decryptedContent,
             string requestId,
             CancellationToken ct)
         {

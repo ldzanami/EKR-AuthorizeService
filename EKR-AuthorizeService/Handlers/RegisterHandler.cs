@@ -5,6 +5,7 @@ using EKR_Shared.Data;
 using EKR_Shared.Handlers.Interfaces;
 using EKR_Shared.Services.Interfaces.Encryption;
 using EKR_Shared.Services.Interfaces.Infrastructure;
+using Serilog;
 using System.Text.Json;
 
 namespace EKR_AuthorizeService.Handlers
@@ -16,11 +17,14 @@ namespace EKR_AuthorizeService.Handlers
         private readonly IAuthService _authService = authService;
 
         public async Task<object?> HandleAsync(
-            byte[] decryptedContent,
+            string decryptedContent,
             string requestId,
             CancellationToken ct)
         {
-            var dto = JsonSerializer.Deserialize<RegisterRequestDto>(decryptedContent)!;
+            var dto = JsonSerializer.Deserialize<RegisterRequestDto>(decryptedContent, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            })!;
             return await _authService.RegisterAsync(dto, requestId);
         }
     }

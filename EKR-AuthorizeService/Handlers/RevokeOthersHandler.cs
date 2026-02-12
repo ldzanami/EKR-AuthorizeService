@@ -13,11 +13,14 @@ namespace EKR_AuthorizeService.Handlers
         private readonly IAuthService _authService = authService;
 
         public async Task<object?> HandleAsync(
-            byte[] decryptedContent,
+            string decryptedContent,
             string requestId,
             CancellationToken ct)
         {
-            var dto = JsonSerializer.Deserialize<RevokeOtherSessionsDto>(decryptedContent);
+            var dto = JsonSerializer.Deserialize<RevokeOtherSessionsDto>(decryptedContent, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
             await _authService.RevokeOtherSessionsAsync(dto!, requestId);
             return new { success = true };
         }

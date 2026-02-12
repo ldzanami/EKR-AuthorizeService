@@ -1,6 +1,7 @@
 ﻿using EKR_AuthorizeService.Services.Interfaces.Auth;
 using EKR_Shared.Data;
 using EKR_Shared.Handlers.Interfaces;
+using System.Text.RegularExpressions;
 
 namespace EKR_AuthorizeService.Handlers
 {
@@ -14,15 +15,11 @@ namespace EKR_AuthorizeService.Handlers
         {
             string pem = File.ReadAllText("keys/public.pem");
 
-            string base64 = pem
-                .Replace("-----BEGIN PUBLIC KEY-----", "")
-                .Replace("-----END PUBLIC KEY-----", "")
-                .Replace("\r", "")
-                .Replace("\n", "")
-                .Trim();
-            byte[] der = Convert.FromBase64String(base64);
+            string base64 = Regex.Replace(pem,
+                            "-+BEGIN PUBLIC KEY-+|-+END PUBLIC KEY-+|\\s+",
+                            "");
 
-            return new { Key = der, RequestId = requestId };
+            return new { Key = base64, RequestId = requestId };
         }
     }
 }

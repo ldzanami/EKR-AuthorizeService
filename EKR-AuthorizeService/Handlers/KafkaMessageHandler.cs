@@ -26,26 +26,29 @@ namespace EKR_AuthorizeService.Handlers
 
         public async Task HandleAsync(Message<string, string> message, CancellationToken ct)
         {
-
-            var package = JsonSerializer.Deserialize<GeneralPackageTemplate>(message.Value)!;
-            RSADecryptedDto decrypted = new();
-
-            if (package.AESKey != null)
-            {
-                decrypted = _RSADecryptorService.Decrypt(
-                            package.AESKey,
-                            package.IV,
-                            package.Content);
-            }
-
             try
             {
+                var package = JsonSerializer.Deserialize<GeneralPackageTemplate>(message.Value)!;
+                byte[] aesKey = [];
+                string content = "";
+
+                if (package.AESKey != null)
+                {
+                    aesKey = _RSADecryptorService.Decrypt(Convert.FromBase64String(package.AESKey));
+
+                    Log.Fatal($"AES: {aesKey.Length}");
+                    Log.Fatal($"AES: {Convert.ToBase64String(aesKey)}");
+
+                    content = _AESEncryptorService.Decrypt(aesKey, Convert.FromBase64String(package.IV), Convert.FromBase64String(package.Content));
+                }
+
+
                 object? result;
                 if (_postHandlers.TryGetValue(package.Type, out var postHandler))
                 {
-                    result = await postHandler!.HandleAsync(Encoding.UTF8.GetBytes(decrypted.Content),
-                                                          message.Key,
-                                                          ct);
+                    result = await postHandler!.HandleAsync(content,
+                                                            message.Key,
+                                                            ct);
                 }
                 else if (_getHandlers.TryGetValue(package.Type, out var getHandler))
                 {
@@ -56,11 +59,11 @@ namespace EKR_AuthorizeService.Handlers
                     throw new InvalidOperationException($"Unknown command: {package.Type}");
                 }
 
-                if (decrypted.AesKey != null)
+                if (aesKey.Length > 0 && !(result is bool))
                 {
                     await SendToKafka(result!,
                                       message.Key,
-                                      decrypted.AesKey,
+                                      aesKey,
                                       package.IV);
                 }
                 else
@@ -77,9 +80,9 @@ namespace EKR_AuthorizeService.Handlers
             }
         }
 
-        private async Task SendToKafka(object result, string requestId, byte[] aesKey, byte[] IV)
+        private async Task SendToKafka(object result, string requestId, byte[] aesKey, string IV)
         {
-            var answer = _AESEncryptorService.Encrypt(JsonSerializer.Serialize(result), aesKey, IV);
+            var answer = _AESEncryptorService.Encrypt(JsonSerializer.Serialize(result), aesKey, Convert.FromBase64String(IV));
             await _kafkaProducerService.GiveAnswerAsync(JsonSerializer.Serialize(answer), partition: requestId);
         }
 

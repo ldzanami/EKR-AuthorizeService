@@ -15,7 +15,7 @@ namespace EKR_AuthorizeService.Services.Interfaces.Auth
         /// </summary>
         /// <param name="dto"> Данные для регистрации пользователя. </param>
         /// <param name="requestId">Id запроса.</param>
-        Task<GetUserResponseDto> RegisterAsync(RegisterRequestDto dto, string requestId);
+        Task<bool> RegisterAsync(RegisterRequestDto dto, string requestId);
 
         /// <summary>
         /// Асинхронно авторизует пользователя и выдает JWT токен.
@@ -38,21 +38,21 @@ namespace EKR_AuthorizeService.Services.Interfaces.Auth
         /// </summary>
         /// <param name="sessionId">Id сессии, которую надо прервать.</param>
         /// <param name="requestId">Id запроса.</param>
-        Task RevokeSessionAsync(Guid sessionId, string requestId);
+        Task<bool> RevokeSessionAsync(Guid sessionId, string requestId);
 
         /// <summary>
         /// Асинхронный разлогин всех сессий пользователя, кроме указанной.
         /// </summary>
         /// <param name="dto">Id пользователя + Id сессии, которую надо оставить.</param>
         /// <param name="requestId">Id запроса.</param>
-        Task RevokeOtherSessionsAsync(RevokeOtherSessionsDto dto, string requestId);
+        Task<bool> RevokeOtherSessionsAsync(RevokeOtherSessionsDto dto, string requestId);
 
         /// <summary>
         /// Асинхронный разлогин всех сессий пользователя.
         /// </summary>
         /// <param name="userId">Id пользователя.</param>
         /// <param name="requestId">Id запроса.</param>
-        Task RevokeAllSessionsAsync(Guid userId, string requestId);
+        Task<bool> RevokeAllSessionsAsync(Guid userId, string requestId);
 
         /// <summary>
         /// Асинхронно получает коллекцию активных сессий пользователя.

@@ -32,7 +32,7 @@ namespace EKR_AuthorizeService.Services.Auth
         /// </summary>
         /// <param name="dto">Данные для регистрации пользователя.</param>
         /// <param name="requestId">Id запроса.</param>
-        public async Task<GetUserResponseDto> RegisterAsync(RegisterRequestDto dto, string requestId)
+        public async Task<bool> RegisterAsync(RegisterRequestDto dto, string requestId)
         {
             try
             {
@@ -53,11 +53,7 @@ namespace EKR_AuthorizeService.Services.Auth
 
                 await _userRepository.CreateUserAsync(user);
 
-                return new GetUserResponseDto
-                {
-                    Id = user.Id,
-                    Username = user.Username
-                };
+                return true;
             }
             catch(Exception ex)
             {
@@ -159,11 +155,12 @@ namespace EKR_AuthorizeService.Services.Auth
         /// </summary>
         /// <param name="sessionId">Id сессии, которую надо прервать.</param>
         /// <param name="requestId">Id запроса.</param>
-        public async Task RevokeSessionAsync(Guid sessionId, string requestId)
+        public async Task<bool> RevokeSessionAsync(Guid sessionId, string requestId)
         {
             try
             {
                 await _sessionService.RevokeSessionAsync(sessionId);
+                return true;
             }
             catch (Exception ex)
             {
@@ -177,11 +174,12 @@ namespace EKR_AuthorizeService.Services.Auth
         /// </summary>
         /// <param name="dto">Id пользователя + Id сессии, которую надо оставить.</param>
         /// <param name="requestId">Id запроса.</param>
-        public async Task RevokeOtherSessionsAsync(RevokeOtherSessionsDto dto, string requestId)
+        public async Task<bool> RevokeOtherSessionsAsync(RevokeOtherSessionsDto dto, string requestId)
         {
             try
             {
                 await _sessionService.RevokeOtherSessionsAsync(dto.UserId, dto.KeepSessionId);
+                return true;
             }
             catch (Exception ex)
             {
@@ -195,11 +193,12 @@ namespace EKR_AuthorizeService.Services.Auth
         /// </summary>
         /// <param name="userId">Id пользователя.</param>
         /// <param name="requestId">Id запроса.</param>
-        public async Task RevokeAllSessionsAsync(Guid userId, string requestId)
+        public async Task<bool> RevokeAllSessionsAsync(Guid userId, string requestId)
         {
             try
             {
                 await _sessionService.RevokeAllSessionsAsync(userId);
+                return true;
             }
             catch (Exception ex)
             {
