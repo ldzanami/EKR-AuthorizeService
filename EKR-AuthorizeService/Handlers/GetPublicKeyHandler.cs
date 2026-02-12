@@ -15,8 +15,8 @@ namespace EKR_AuthorizeService.Handlers
             string pem = File.ReadAllText("keys/public.pem");
 
             string base64 = pem
-                .Replace("-----BEGIN RSA PUBLIC KEY-----", "")
-                .Replace("-----END RSA PUBLIC KEY-----", "")
+                .Replace("-----BEGIN PUBLIC KEY-----", "")
+                .Replace("-----END PUBLIC KEY-----", "")
                 .Replace("\r", "")
                 .Replace("\n", "")
                 .Trim();

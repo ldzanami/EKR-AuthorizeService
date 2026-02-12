@@ -81,7 +81,7 @@ namespace EKR_AuthorizeService
                 var privateKeyPem = rsa.ExportRSAPrivateKeyPem();
                 File.WriteAllText("keys/private.pem", privateKeyPem);
 
-                var publicKeyPem = rsa.ExportRSAPublicKeyPem();
+                var publicKeyPem = rsa.ExportSubjectPublicKeyInfoPem();
                 File.WriteAllText("keys/public.pem", publicKeyPem);
 
                 var app = builder.Build();
