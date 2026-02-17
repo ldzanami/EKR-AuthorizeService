@@ -40,9 +40,15 @@ namespace EKR_AuthorizeService.Handlers
 
                 if (package.AESKey != null)
                 {
-                    Log.Fatal("*HASH*= {@Hash}", _hashCheckingService.CalculateHash(new { package.AESKey, package.Type, package.Content, package.IV }));
 
-                    await _hashCheckingService.CheckHashAsync(package.Hash, new { package.AESKey, package.Type, package.Content, package.IV });
+                    await _hashCheckingService.CheckHashAsync(package.Hash, new
+                                                                            {
+                                                                                aesKey = package.AESKey,
+                                                                                type = package.Type,
+                                                                                content = package.Content,
+                                                                                iv = package.IV,
+                                                                                requestId = package.RequestId
+                                                                            });
 
                     aesKey = _RSADecryptorService.Decrypt(Convert.FromBase64String(package.AESKey));
 
