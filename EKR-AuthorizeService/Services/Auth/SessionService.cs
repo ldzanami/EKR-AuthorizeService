@@ -3,6 +3,7 @@ using EKR_AuthorizeService.Entities;
 using EKR_AuthorizeService.Repositories.Interfaces.Helpers;
 using EKR_AuthorizeService.Repositories.Interfaces.User;
 using EKR_AuthorizeService.Services.Interfaces.Auth;
+using Serilog;
 
 namespace EKR_AuthorizeService.Services.Auth
 {
@@ -76,15 +77,17 @@ namespace EKR_AuthorizeService.Services.Auth
         /// <exception cref="UnauthorizedAccessException">Некорректный токен.</exception>
         public async Task<(string AccessToken, string RefreshToken, Guid SessionId)> RefreshAsync(string incomingRefreshToken)
         {
+
             var incomingHash = _jwtGeneratorService.HashToken(incomingRefreshToken);
 
             var session = await _sessionRepository.GetSessionByRefreshHashAsync(incomingHash);
+
+            if (session == null) throw new UnauthorizedAccessException("Refresh токен не найден");
 
             await _checkExistRepository.IsUserExist(session.UserId);
 
             var user = await _userRepository.GetUserByIdAsync(session.UserId);
 
-            if (session == null) throw new UnauthorizedAccessException("Refresh токен не найден");
             if (session.IsRevoked) throw new UnauthorizedAccessException("Refresh токен отозван");
             if (session.ExpiresAt <= DateTime.UtcNow) throw new UnauthorizedAccessException("Refresh токен просрочен");
 

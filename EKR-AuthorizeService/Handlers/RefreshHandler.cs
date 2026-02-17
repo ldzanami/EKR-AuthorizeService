@@ -1,8 +1,10 @@
 ﻿using Confluent.Kafka;
 using EKR_AuthorizeService.Services.Interfaces.Auth;
+using EKR_Shared;
 using EKR_Shared.Auth.Post.Incoming;
 using EKR_Shared.Data;
 using EKR_Shared.Handlers.Interfaces;
+using Serilog;
 using System.Text;
 using System.Text.Json;
 
@@ -19,7 +21,7 @@ namespace EKR_AuthorizeService.Handlers
             string requestId,
             CancellationToken ct)
         {
-            return await _authService.RefreshAsync(decryptedContent, requestId);
+            return await _authService.RefreshAsync(decryptedContent.Trim("\"").ToString(), requestId);
         }
     }
 }

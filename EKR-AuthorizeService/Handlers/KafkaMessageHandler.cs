@@ -52,9 +52,6 @@ namespace EKR_AuthorizeService.Handlers
 
                     aesKey = _RSADecryptorService.Decrypt(Convert.FromBase64String(package.AESKey));
 
-                    Log.Fatal($"AES: {aesKey.Length}");
-                    Log.Fatal($"AES: {Convert.ToBase64String(aesKey)}");
-
                     content = _AESEncryptorService.Decrypt(aesKey, Convert.FromBase64String(package.IV), Convert.FromBase64String(package.Content));
                 }
 
