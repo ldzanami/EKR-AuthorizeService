@@ -9,16 +9,15 @@ using EKR_AuthorizeService.Services.Auth;
 using EKR_AuthorizeService.Services.Encriptoin;
 using EKR_AuthorizeService.Services.Interfaces.Auth;
 using EKR_AuthorizeService.Services.Interfaces.Encription;
-using EKR_Shared.Handlers;
 using EKR_Shared.Handlers.Interfaces;
-using EKR_Shared.Middlewares;
 using EKR_Shared.Services.Encryption;
+using EKR_Shared.Services.Helpers;
 using EKR_Shared.Services.Infrastructure;
 using EKR_Shared.Services.Interfaces.Encryption;
+using EKR_Shared.Services.Interfaces.Helpers;
 using EKR_Shared.Services.Interfaces.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
-using System.IO;
 using System.Security.Cryptography;
 
 namespace EKR_AuthorizeService
@@ -68,6 +67,7 @@ namespace EKR_AuthorizeService
                 builder.Services.AddScoped<IPostCommandHandler, RevokeHandler>();
                 builder.Services.AddScoped<IPostCommandHandler, RevokeOthersHandler>();
                 builder.Services.AddScoped<IGetCommandHandler, GetPublicKeyHandler>();
+                builder.Services.AddScoped<IHashCheckingService, HashCheckingService>();
 
                 Log.Information("Generate RSA keys");
                 using var rsa = RSA.Create(2048);

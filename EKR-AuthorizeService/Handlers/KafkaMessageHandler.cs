@@ -2,9 +2,12 @@
 using EKR_AuthorizeService.Services.Interfaces.Auth;
 using EKR_Shared;
 using EKR_Shared.Auth.Post.Incoming;
+using EKR_Shared.Exceptions;
 using EKR_Shared.Handlers.Interfaces;
 using EKR_Shared.Services.Encryption;
+using EKR_Shared.Services.Helpers;
 using EKR_Shared.Services.Interfaces.Encryption;
+using EKR_Shared.Services.Interfaces.Helpers;
 using EKR_Shared.Services.Interfaces.Infrastructure;
 using Serilog;
 using System.Text;
@@ -16,24 +19,31 @@ namespace EKR_AuthorizeService.Handlers
                                      IKafkaProducerService kafkaProducerService,
                                      IRSAEncryptorService RSADecryptorService,
                                      IAESEncryptorService AESEncryptorService,
-                                     IEnumerable<IGetCommandHandler> getHandlers) : IKafkaMessageHandler<string, string>
+                                     IEnumerable<IGetCommandHandler> getHandlers,
+                                     IHashCheckingService hashCheckingService) : IKafkaMessageHandler<string, string>
     {
         private readonly IDictionary<string, IPostCommandHandler> _postHandlers = postHandlers.ToDictionary(h => h.CommandType);
         private readonly IDictionary<string, IGetCommandHandler> _getHandlers = getHandlers.ToDictionary(h => h.CommandType);
         private readonly IKafkaProducerService _kafkaProducerService = kafkaProducerService;
         private readonly IRSAEncryptorService _RSADecryptorService = RSADecryptorService;
         private readonly IAESEncryptorService _AESEncryptorService = AESEncryptorService;
+        private readonly IHashCheckingService _hashCheckingService = hashCheckingService;
 
         public async Task HandleAsync(Message<string, string> message, CancellationToken ct)
         {
             try
             {
                 var package = JsonSerializer.Deserialize<GeneralPackageTemplate>(message.Value)!;
+
                 byte[] aesKey = [];
                 string content = "";
 
                 if (package.AESKey != null)
                 {
+                    Log.Fatal("*HASH*= {@Hash}", _hashCheckingService.CalculateHash(new { package.AESKey, package.Type, package.Content, package.IV }));
+
+                    await _hashCheckingService.CheckHashAsync(package.Hash, new { package.AESKey, package.Type, package.Content, package.IV });
+
                     aesKey = _RSADecryptorService.Decrypt(Convert.FromBase64String(package.AESKey));
 
                     Log.Fatal($"AES: {aesKey.Length}");
@@ -56,7 +66,7 @@ namespace EKR_AuthorizeService.Handlers
                 }
                 else
                 {
-                    throw new InvalidOperationException($"Unknown command: {package.Type}");
+                    throw new InvalidOperationException($"Неизвестная команда: {package.Type}");
                 }
 
                 if (aesKey.Length > 0 && !(result is bool))
@@ -75,8 +85,11 @@ namespace EKR_AuthorizeService.Handlers
             }
             catch(InvalidOperationException ex)
             {
-                await _kafkaProducerService.GiveAnswerAsync(new { ex.Message, Type = ex.GetType() }.ToString()!, partition: message.Key);
-                throw;
+                await _kafkaProducerService.GiveAnswerAsync(new ClientSideException(ex.Message).ToString()!, partition: message.Key);
+            }
+            catch(Exception ex)
+            {
+                await _kafkaProducerService.GiveAnswerAsync(new ServerSideException(ex.Message, ex).ToString(), partition: message.Key);
             }
         }
 
