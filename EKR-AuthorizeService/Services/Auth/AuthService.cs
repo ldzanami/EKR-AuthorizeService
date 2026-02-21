@@ -88,30 +88,29 @@ namespace EKR_AuthorizeService.Services.Auth
 
                 var session = (await _sessionRepository.GetUserSessionsAsync(user.Id)).FirstOrDefault(s => (ConnectionInfoDto)s.ConnectionInfo == dto.ConnectionInfo);
 
-                string accessToken, refreshToken;
-                Guid sessionId;
+                RefreshDto result;
 
                 if (session == null)
                 {
-                    (accessToken, refreshToken, sessionId) = await _sessionService.CreateSessionAsync(user, dto.ConnectionInfo);
+                    result = await _sessionService.CreateSessionAsync(user, dto.ConnectionInfo);
                 }
                 else if ((ConnectionInfoDto)session.ConnectionInfo != dto.ConnectionInfo || dto.RefreshToken == null)
                 {
                     await _sessionRepository.RemoveSessionAsync(session);
-                    (accessToken, refreshToken, sessionId) = await _sessionService.CreateSessionAsync(user, dto.ConnectionInfo);
+                    result = await _sessionService.CreateSessionAsync(user, dto.ConnectionInfo);
                 }
                 else
                 {
                     session.IsRevoked = false;
-                    (accessToken, refreshToken, sessionId) = await _sessionService.RefreshAsync(dto.RefreshToken);
+                    result = await _sessionService.RefreshAsync(dto.RefreshToken);
                     await _sessionRepository.UpdateSessionAsync(session);
                 }
 
                 return new AuthResponseDto
                 {
-                    SessionId = sessionId,
-                    AccessToken = accessToken,
-                    RefreshToken = refreshToken,
+                    SessionId = result.SessionId,
+                    AccessToken = result.AccessToken,
+                    RefreshToken = result.RefreshToken,
                     UserId = user.Id,
                     Username = user.Username
                 };
@@ -134,14 +133,9 @@ namespace EKR_AuthorizeService.Services.Auth
         {
             try
             {
-                (string accessToken, string refreshToken, Guid sessionId) = await _sessionService.RefreshAsync(incomingRefreshToken);
+                RefreshDto result = await _sessionService.RefreshAsync(incomingRefreshToken);
 
-                return new RefreshDto
-                {
-                    AccessToken = accessToken,
-                    RefreshToken = refreshToken,
-                    SessionId = sessionId
-                };
+                return result;
             }
             catch (Exception ex)
             {

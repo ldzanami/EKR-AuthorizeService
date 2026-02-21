@@ -1,4 +1,5 @@
 ﻿using EKR_AuthorizeService.Entities;
+using EKR_Shared.Auth.Post.Response;
 
 namespace EKR_AuthorizeService.Services.Interfaces.Auth
 {
@@ -13,14 +14,14 @@ namespace EKR_AuthorizeService.Services.Interfaces.Auth
         /// <param name="user">Пользователь сессии.</param>
         /// <param name="deviceInfo">Информация об устройстве.</param>
         /// <returns>access + refresh токены и id сессии.</returns>
-        Task<(string AccessToken, string RefreshToken, Guid SessionId)> CreateSessionAsync(User user, string deviceInfo);
+        Task<RefreshDto> CreateSessionAsync(User user, string deviceInfo);
 
         /// <summary>
         /// Асинхронная ротация refresh: валидирует входной refresh, если ок — меняет на новый и отдаёт новую пару.
         /// </summary>
         /// <param name="incomingRefreshToken">Текущий refresh токен.</param>
         /// <returns>новые access + refresh токены и id сессии.</returns>
-        Task<(string AccessToken, string RefreshToken, Guid SessionId)> RefreshAsync(string incomingRefreshToken);
+        Task<RefreshDto> RefreshAsync(string incomingRefreshToken);
 
         /// <summary>
         /// Асинхронный разлогин конкретной сессии.

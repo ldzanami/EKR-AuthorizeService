@@ -2,6 +2,7 @@
 using EKR_AuthorizeService.Entities;
 using EKR_AuthorizeService.Repositories.Interfaces.Helpers;
 using EKR_AuthorizeService.Repositories.Interfaces.User;
+using EKR_Shared.Auth.Post.Response;
 using EKR_AuthorizeService.Services.Interfaces.Auth;
 using Serilog;
 
@@ -47,7 +48,7 @@ namespace EKR_AuthorizeService.Services.Auth
         /// <param name="user">Пользователь сессии.</param>
         /// <param name="deviceInfo">Информация об устройстве.</param>
         /// <returns>Access + refresh токены и id сессии.</returns>
-        public async Task<(string AccessToken, string RefreshToken, Guid SessionId)> CreateSessionAsync(User user, string deviceInfo)
+        public async Task<RefreshDto> CreateSessionAsync(User user, string deviceInfo)
         {
             await _checkExistRepository.IsUserExist(user.Id);
             var access = _jwtGeneratorService.GenerateAccessToken(user, out _);
@@ -66,7 +67,14 @@ namespace EKR_AuthorizeService.Services.Auth
 
             await _sessionRepository.AddSessionAsync(session);
 
-            return (access, refreshPlain, session.Id);
+            return new RefreshDto
+            {
+                AccessToken = access,
+                RefreshToken = refreshPlain,
+                SessionId = session.Id,
+                Username = user.Username
+            };
+
         }
 
         /// <summary>
@@ -75,7 +83,7 @@ namespace EKR_AuthorizeService.Services.Auth
         /// <param name="incomingRefreshToken">Текущий refresh токен.</param>
         /// <returns>Новые access + refresh токены и id сессии.</returns>
         /// <exception cref="UnauthorizedAccessException">Некорректный токен.</exception>
-        public async Task<(string AccessToken, string RefreshToken, Guid SessionId)> RefreshAsync(string incomingRefreshToken)
+        public async Task<RefreshDto> RefreshAsync(string incomingRefreshToken)
         {
 
             var incomingHash = _jwtGeneratorService.HashToken(incomingRefreshToken);
@@ -98,7 +106,14 @@ namespace EKR_AuthorizeService.Services.Auth
             await _sessionRepository.UpdateSessionAsync(session);
 
             var access = _jwtGeneratorService.GenerateAccessToken(user, out _);
-            return (access, newRefreshPlain, session.Id);
+
+            return new RefreshDto
+            {
+                AccessToken = access,
+                RefreshToken = newRefreshPlain,
+                SessionId = session.Id,
+                Username = user.Username
+            };
         }
 
         /// <summary>
