@@ -1,6 +1,4 @@
-﻿using Confluent.Kafka;
-using EKR_AuthorizeService.Services.Interfaces.Auth;
-using EKR_Shared.Auth.Post.Incoming;
+﻿using EKR_AuthorizeService.Services.Interfaces.Auth;
 using EKR_Shared.Data;
 using EKR_Shared.Handlers.Interfaces;
 

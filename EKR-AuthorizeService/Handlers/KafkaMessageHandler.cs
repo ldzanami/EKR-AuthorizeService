@@ -1,16 +1,10 @@
 ﻿using Confluent.Kafka;
-using EKR_AuthorizeService.Services.Interfaces.Auth;
 using EKR_Shared;
-using EKR_Shared.Auth.Post.Incoming;
 using EKR_Shared.Exceptions;
 using EKR_Shared.Handlers.Interfaces;
-using EKR_Shared.Services.Encryption;
-using EKR_Shared.Services.Helpers;
 using EKR_Shared.Services.Interfaces.Encryption;
 using EKR_Shared.Services.Interfaces.Helpers;
 using EKR_Shared.Services.Interfaces.Infrastructure;
-using Serilog;
-using System.Text;
 using System.Text.Json;
 
 namespace EKR_AuthorizeService.Handlers

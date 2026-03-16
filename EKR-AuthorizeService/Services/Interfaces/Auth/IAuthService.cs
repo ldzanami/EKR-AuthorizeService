@@ -1,7 +1,5 @@
-﻿using EKR_Shared.Auth.Get.Response;
-using EKR_Shared.Auth.Post.Incoming;
+﻿using EKR_Shared.Auth.Post.Incoming;
 using EKR_Shared.Auth.Post.Response;
-using EKR_Shared.Auxiliary;
 
 namespace EKR_AuthorizeService.Services.Interfaces.Auth
 {

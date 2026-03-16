@@ -3,7 +3,6 @@ using EKR_AuthorizeService.Repositories.Interfaces.User;
 using EKR_AuthorizeService.Services.Interfaces.Auth;
 using EKR_AuthorizeService.Services.Interfaces.Encription;
 using EKR_Shared.Auth.Post.Response;
-using EKR_Shared.Auth.Get.Response;
 using EKR_Shared.Auth.Post.Incoming;
 using EKR_Shared.Auxiliary;
 using EKR_Shared.Services.Interfaces.Infrastructure;

@@ -1,10 +1,8 @@
-﻿using Microsoft.EntityFrameworkCore;
-using EKR_AuthorizeService.Entities;
+﻿using EKR_AuthorizeService.Entities;
 using EKR_AuthorizeService.Repositories.Interfaces.Helpers;
 using EKR_AuthorizeService.Repositories.Interfaces.User;
 using EKR_Shared.Auth.Post.Response;
 using EKR_AuthorizeService.Services.Interfaces.Auth;
-using Serilog;
 
 namespace EKR_AuthorizeService.Services.Auth
 {

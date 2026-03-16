@@ -1,5 +1,4 @@
-﻿using EKR_AuthorizeService.Services.Interfaces.Auth;
-using EKR_Shared.Data;
+﻿using EKR_Shared.Data;
 using EKR_Shared.Handlers.Interfaces;
 using System.Text.RegularExpressions;
 
