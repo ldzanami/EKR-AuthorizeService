@@ -34,7 +34,22 @@
         /// <summary>
         /// Информация о соединении.
         /// </summary>
-        public string ConnectionInfo { get; set; }
+        public byte[] ConnectionInfo { get; set; }
+
+        /// <summary>
+        /// AES ключ которым зашифрованы секретные поля
+        /// </summary>
+        public byte[] EncryptedAESKey { get; set; }
+
+        /// <summary>
+        /// Вектор инициализации AES
+        /// </summary>
+        public byte[] IV { get; set; }
+
+        /// <summary>
+        /// Версия ключа, которым зашифрован AES ключ
+        /// </summary>
+        public string KeyVersion { get; set; }
 
         /// <summary>
         /// Дата создания сессии.

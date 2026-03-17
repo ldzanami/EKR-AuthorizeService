@@ -12,7 +12,7 @@ namespace EKR_AuthorizeService.Handlers
             string requestId,
             CancellationToken ct)
         {
-            string pem = File.ReadAllText("keys/public.pem");
+            string pem = File.ReadAllText("keys/current/public.pem");
 
             string base64 = Regex.Replace(pem,
                             "-+BEGIN PUBLIC KEY-+|-+END PUBLIC KEY-+|\\s+",

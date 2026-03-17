@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace EKR_AuthorizeService.Migrations
 {
     /// <inheritdoc />
-    public partial class InitDatabase : Migration
+    public partial class EncryptionAdded : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -28,26 +28,6 @@ namespace EKR_AuthorizeService.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Logs",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Action = table.Column<string>(type: "text", nullable: false),
-                    Timestamp = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Logs", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Logs_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "Sessions",
                 columns: table => new
                 {
@@ -56,7 +36,9 @@ namespace EKR_AuthorizeService.Migrations
                     RefreshToken = table.Column<string>(type: "text", nullable: false),
                     ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     IsRevoked = table.Column<bool>(type: "boolean", nullable: false),
-                    DeviceInfo = table.Column<string>(type: "text", nullable: false),
+                    ConnectionInfo = table.Column<byte[]>(type: "bytea", nullable: false),
+                    EncryptedAESKey = table.Column<byte[]>(type: "bytea", nullable: false),
+                    KeyVersion = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -71,11 +53,6 @@ namespace EKR_AuthorizeService.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Logs_UserId",
-                table: "Logs",
-                column: "UserId");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Sessions_UserId",
                 table: "Sessions",
                 column: "UserId");
@@ -84,9 +61,6 @@ namespace EKR_AuthorizeService.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropTable(
-                name: "Logs");
-
             migrationBuilder.DropTable(
                 name: "Sessions");
 

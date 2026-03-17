@@ -1,5 +1,6 @@
 ﻿using EKR_AuthorizeService.Entities;
 using EKR_Shared.Auth.Post.Response;
+using EKR_Shared.Auxiliary;
 
 namespace EKR_AuthorizeService.Services.Interfaces.Auth
 {
@@ -14,7 +15,7 @@ namespace EKR_AuthorizeService.Services.Interfaces.Auth
         /// <param name="user">Пользователь сессии.</param>
         /// <param name="deviceInfo">Информация об устройстве.</param>
         /// <returns>access + refresh токены и id сессии.</returns>
-        Task<RefreshDto> CreateSessionAsync(User user, string deviceInfo);
+        Task<RefreshDto> CreateSessionAsync(User user, AESEncryptPack AESPack, byte[] connectionInfo);
 
         /// <summary>
         /// Асинхронная ротация refresh: валидирует входной refresh, если ок — меняет на новый и отдаёт новую пару.

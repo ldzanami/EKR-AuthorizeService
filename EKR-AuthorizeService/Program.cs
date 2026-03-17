@@ -18,6 +18,7 @@ using EKR_Shared.Services.Interfaces.Helpers;
 using EKR_Shared.Services.Interfaces.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
+using System.Diagnostics;
 using System.Security.Cryptography;
 
 namespace EKR_AuthorizeService
@@ -83,21 +84,65 @@ namespace EKR_AuthorizeService
                 builder.Services.AddScoped<IGetCommandHandler, GetPublicKeyHandler>();
                 builder.Services.AddScoped<IHashCheckingService, HashCheckingService>();
 
-                Log.Information("Generate RSA keys");
-                using var rsa = RSA.Create(2048);
 
-                var dir = Path.GetDirectoryName("keys/");
+                var dir = "keys/current";
                 if (!Directory.Exists(dir))
                 {
                     Directory.CreateDirectory(dir!);
                 }
 
+                var keyFiles = Directory.GetFiles("keys/current")
+                                        .Where(f => Path.GetFileName(f) == "public.pem"
+                                                 || Path.GetFileName(f) == "private.pem")
+                                        .ToArray();
 
-                var privateKeyPem = rsa.ExportRSAPrivateKeyPem();
-                File.WriteAllText("keys/private.pem", privateKeyPem);
+                DateTime creationTime = DateTime.Now;
 
-                var publicKeyPem = rsa.ExportSubjectPublicKeyInfoPem();
-                File.WriteAllText("keys/public.pem", publicKeyPem);
+                if (keyFiles.Length > 0)
+                {
+                    creationTime = File.GetCreationTime(keyFiles.First());
+                }
+
+                if (keyFiles.Length == 0 || creationTime.AddMonths(6) <= DateTime.Now)
+                {
+                    if (keyFiles.Length != 0)
+                    {
+                        var versionFolders = Directory.GetDirectories("keys/", "version*");
+
+                        int nextVersion = 1;
+                        if (versionFolders.Length > 0)
+                        {
+                            nextVersion = versionFolders
+                                          .Select(f => Path.GetFileName(f).Replace("version", ""))
+                                          .Select(n => int.TryParse(n, out int v) ? v : 0)
+                                          .Max() + 1;
+                        }
+
+                        string nextVersionFolder = Path.Combine("keys/", $"version {nextVersion}");
+
+                        builder.Configuration["CurrentKeyVersion"] = $"version {nextVersion + 1}";
+
+                        Directory.CreateDirectory(nextVersionFolder);
+
+                        foreach (var file in Directory.GetFiles("keys/current"))
+                        {
+                            string destFile = Path.Combine(nextVersionFolder, Path.GetFileName(file));
+                            File.Move(file, destFile);
+                        }
+                    }
+
+                    Log.Information("Generate RSA keys");
+                    using var rsa = RSA.Create(2048);
+
+                    var privateKeyPem = rsa.ExportRSAPrivateKeyPem();
+                    File.WriteAllText("keys/current/private.pem", privateKeyPem);
+
+                    var publicKeyPem = rsa.ExportSubjectPublicKeyInfoPem();
+                    File.WriteAllText("keys/current/public.pem", publicKeyPem);
+                }
+                
+
+                
 
                 var app = builder.Build();
 

@@ -5,7 +5,9 @@ using EKR_Shared.Handlers.Interfaces;
 using EKR_Shared.Services.Interfaces.Encryption;
 using EKR_Shared.Services.Interfaces.Helpers;
 using EKR_Shared.Services.Interfaces.Infrastructure;
+using EKR_Shared.Auxiliary;
 using System.Text.Json;
+using Serilog;
 
 namespace EKR_AuthorizeService.Handlers
 {
@@ -44,7 +46,9 @@ namespace EKR_AuthorizeService.Handlers
                                                                                 requestId = package.RequestId
                                                                             });
 
-                    aesKey = _RSADecryptorService.Decrypt(Convert.FromBase64String(package.AESKey));
+                    aesKey = _RSADecryptorService.Decrypt(Convert.FromBase64String(package.AESKey), "current");
+
+                    Log.Fatal("{@aesKey}", aesKey);
 
                     content = _AESEncryptorService.Decrypt(aesKey, Convert.FromBase64String(package.IV), Convert.FromBase64String(package.Content));
                 }
@@ -55,6 +59,12 @@ namespace EKR_AuthorizeService.Handlers
                 {
                     result = await postHandler!.HandleAsync(content,
                                                             message.Key,
+                                                            new AESEncryptPack
+                                                            {
+                                                                AESKey = aesKey,
+                                                                EncryptedAESKey = Convert.FromBase64String(package.AESKey!),
+                                                                IV = Convert.FromBase64String(package.IV)
+                                                            },
                                                             ct);
                 }
                 else if (_getHandlers.TryGetValue(package.Type, out var getHandler))

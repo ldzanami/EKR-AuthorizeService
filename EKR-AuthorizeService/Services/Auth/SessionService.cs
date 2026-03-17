@@ -3,6 +3,8 @@ using EKR_AuthorizeService.Repositories.Interfaces.Helpers;
 using EKR_AuthorizeService.Repositories.Interfaces.User;
 using EKR_Shared.Auth.Post.Response;
 using EKR_AuthorizeService.Services.Interfaces.Auth;
+using EKR_Shared.Auxiliary;
+using EKR_Shared.Services.Interfaces.Encryption;
 
 namespace EKR_AuthorizeService.Services.Auth
 {
@@ -16,6 +18,8 @@ namespace EKR_AuthorizeService.Services.Auth
         private readonly ISessionRepository _sessionRepository;
         private readonly IUserRepository _userRepository;
         private readonly ICheckExistRepository _checkExistRepository;
+        private readonly IAESEncryptorService _AESEncryptorService;
+        private readonly IConfiguration _configuration;
 
         /// <summary>
         /// Конструктор класса.
@@ -38,6 +42,7 @@ namespace EKR_AuthorizeService.Services.Auth
             _refreshLifetime = TimeSpan.FromDays(refreshTokenLifetimeDays);
             _userRepository = userRepository;
             _checkExistRepository = checkExistRepository;
+            _configuration = configuration;
         }
 
         /// <summary>
@@ -46,7 +51,7 @@ namespace EKR_AuthorizeService.Services.Auth
         /// <param name="user">Пользователь сессии.</param>
         /// <param name="deviceInfo">Информация об устройстве.</param>
         /// <returns>Access + refresh токены и id сессии.</returns>
-        public async Task<RefreshDto> CreateSessionAsync(User user, string deviceInfo)
+        public async Task<RefreshDto> CreateSessionAsync(User user, AESEncryptPack AESPack, byte[] connectionInfo)
         {
             await _checkExistRepository.IsUserExist(user.Id);
             var access = _jwtGeneratorService.GenerateAccessToken(user, out _);
@@ -59,7 +64,10 @@ namespace EKR_AuthorizeService.Services.Auth
                 RefreshToken = refreshHash,
                 ExpiresAt = DateTime.UtcNow + _refreshLifetime,
                 IsRevoked = false,
-                ConnectionInfo = deviceInfo,
+                ConnectionInfo = connectionInfo,
+                EncryptedAESKey = AESPack.EncryptedAESKey,
+                IV = AESPack.IV,
+                KeyVersion = _configuration["CurrentKeyVersion"]!,
                 CreatedAt = DateTime.UtcNow
             };
 

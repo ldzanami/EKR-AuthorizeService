@@ -1,5 +1,6 @@
 ﻿using EKR_Shared.Auth.Post.Incoming;
 using EKR_Shared.Auth.Post.Response;
+using EKR_Shared.Auxiliary;
 
 namespace EKR_AuthorizeService.Services.Interfaces.Auth
 {
@@ -20,8 +21,9 @@ namespace EKR_AuthorizeService.Services.Interfaces.Auth
         /// </summary>
         /// <param name="dto">Данные для авторизации пользователя.</param>
         /// <param name="requestId">Id запроса.</param>
+        /// <param name="AESPack">AES пак для шифровки и расшифровки</param>
         /// <returns>JWT токен при успешной авторизации.</returns>
-        Task<AuthResponseDto> AuthorizationAsync(AuthorizationDto dto, string requestId);
+        Task<AuthResponseDto> AuthorizationAsync(AuthorizationDto dto, AESEncryptPack AESPack, string requestId);
 
         /// <summary>
         /// Асинхронное обновление токенов.
@@ -57,7 +59,8 @@ namespace EKR_AuthorizeService.Services.Interfaces.Auth
         /// </summary>
         /// <param name="userId">Id пользователя.</param>
         /// <param name="requestId">Id запроса.</param>
+        /// <param name="AESPack">AES пак для шифровки и расшифровки</param>
         /// <returns>Коллекция активных сессий пользователя.</returns>
-        Task<ICollection<GetSessionResponseDto>> GetActiveUserSessionsAsync(Guid userId, string requestId);
+        Task<ICollection<GetSessionResponseDto>> GetActiveUserSessionsAsync(Guid userId, AESEncryptPack AESPack, string requestId);
     }
 }

@@ -2,10 +2,13 @@
 using EKR_AuthorizeService.Repositories.Interfaces.User;
 using EKR_AuthorizeService.Services.Interfaces.Auth;
 using EKR_AuthorizeService.Services.Interfaces.Encription;
-using EKR_Shared.Auth.Post.Response;
 using EKR_Shared.Auth.Post.Incoming;
+using EKR_Shared.Auth.Post.Response;
 using EKR_Shared.Auxiliary;
+using EKR_Shared.Services.Encryption;
+using EKR_Shared.Services.Interfaces.Encryption;
 using EKR_Shared.Services.Interfaces.Infrastructure;
+using Serilog;
 
 namespace EKR_AuthorizeService.Services.Auth
 {
@@ -17,7 +20,10 @@ namespace EKR_AuthorizeService.Services.Auth
                              IPasswordHashService passwordHashService,
                              ISessionService sessionService,
                              ISessionRepository sessionRepository,
-                             IKafkaProducerService kafkaProducerService) : IAuthService
+                             IKafkaProducerService kafkaProducerService,
+                             IAESEncryptorService AESEncryptorService,
+                             IRSAEncryptorService RSAEncryptorService,
+                             IConfiguration configuration) : IAuthService
     {
         private readonly IKafkaProducerService _kafkaProducerService = kafkaProducerService;
         private readonly IUserRepository _userRepository = userRepository;
@@ -25,6 +31,9 @@ namespace EKR_AuthorizeService.Services.Auth
         private readonly IPasswordHashService _passwordHashService = passwordHashService;
         private readonly ISessionService _sessionService = sessionService;
         private readonly ISessionRepository _sessionRepository = sessionRepository;
+        private readonly IAESEncryptorService _AESEncryptorService = AESEncryptorService;
+        private readonly IRSAEncryptorService _RSAEncryptorService = RSAEncryptorService;
+        private readonly IConfiguration _configuration = configuration;
 
         /// <summary>
         /// Асинхронно регистрирует нового пользователя в системе.
@@ -67,7 +76,7 @@ namespace EKR_AuthorizeService.Services.Auth
         /// <param name="dto">Данные для авторизации пользователя.</param>
         /// <param name="requestId">Id запроса.</param>
         /// <returns>JWT токен при успешной авторизации.</returns>
-        public async Task<AuthResponseDto> AuthorizationAsync(AuthorizationDto dto, string requestId)
+        public async Task<AuthResponseDto> AuthorizationAsync(AuthorizationDto dto, AESEncryptPack AESPack, string requestId)
         {
             try
             {
@@ -85,18 +94,32 @@ namespace EKR_AuthorizeService.Services.Auth
                     throw new UnauthorizedAccessException("Неверный логин или пароль.");
                 }
 
-                var session = (await _sessionRepository.GetUserSessionsAsync(user.Id)).FirstOrDefault(s => (ConnectionInfoDto)s.ConnectionInfo == dto.ConnectionInfo);
+
+                var sessions = (await _sessionRepository.GetUserSessionsAsync(user.Id));
+
+                Session session = null;
+                byte[] sessionAesKey = [];
+                foreach (var s in sessions)
+                {
+                    var keyVersion = s.KeyVersion == _configuration["CurrentKeyVersion"] ? "current" : s.KeyVersion;
+                    sessionAesKey = _RSAEncryptorService.Decrypt(s.EncryptedAESKey, keyVersion);
+                    var decrConnectInfo = _AESEncryptorService.Decrypt(sessionAesKey, s.IV, s.ConnectionInfo);
+                    if(decrConnectInfo == dto.ConnectionInfo)
+                    {
+                        session = s;
+                    }
+                }
 
                 RefreshDto result;
 
                 if (session == null)
                 {
-                    result = await _sessionService.CreateSessionAsync(user, dto.ConnectionInfo);
+                    result = await _sessionService.CreateSessionAsync(user, AESPack, _AESEncryptorService.Encrypt(dto.ConnectionInfo, AESPack.AESKey, AESPack.IV));
                 }
-                else if ((ConnectionInfoDto)session.ConnectionInfo != dto.ConnectionInfo || dto.RefreshToken == null)
+                else if (_AESEncryptorService.Decrypt(sessionAesKey, session.IV, session.ConnectionInfo) != dto.ConnectionInfo || dto.RefreshToken == null)
                 {
                     await _sessionRepository.RemoveSessionAsync(session);
-                    result = await _sessionService.CreateSessionAsync(user, dto.ConnectionInfo);
+                    result = await _sessionService.CreateSessionAsync(user, AESPack, _AESEncryptorService.Encrypt(dto.ConnectionInfo, AESPack.AESKey, AESPack.IV));
                 }
                 else
                 {
@@ -206,14 +229,14 @@ namespace EKR_AuthorizeService.Services.Auth
         /// <param name="userId">Id пользователя.</param>
         /// <param name="requestId">Id запроса.</param>
         /// <returns>Коллекция активных сессий пользователя.</returns>
-        public async Task<ICollection<GetSessionResponseDto>> GetActiveUserSessionsAsync(Guid userId, string requestId)
+        public async Task<ICollection<GetSessionResponseDto>> GetActiveUserSessionsAsync(Guid userId, AESEncryptPack AESPack, string requestId)
         {
             try
             {
                 return (await _sessionRepository.GetActiveUserSessionsAsync(userId)).Select(s => new GetSessionResponseDto()
                 {
                     CreatedAt = s.CreatedAt,
-                    DeviceInfo = s.ConnectionInfo,
+                    ConnectionInfo = _AESEncryptorService.Decrypt(AESPack.AESKey, AESPack.IV, s.ConnectionInfo),
                     ExpiresAt = s.ExpiresAt,
                     Id = s.Id,
                     IsRevoked = s.IsRevoked,

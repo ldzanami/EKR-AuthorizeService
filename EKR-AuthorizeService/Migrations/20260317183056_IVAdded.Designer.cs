@@ -12,41 +12,18 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EKR_AuthorizeService.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260119161345_InitDatabase")]
-    partial class InitDatabase
+    [Migration("20260317183056_IVAdded")]
+    partial class IVAdded
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.2")
+                .HasAnnotation("ProductVersion", "10.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
-
-            modelBuilder.Entity("EKR_AuthorizeService.Entities.Log", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Action")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Logs");
-                });
 
             modelBuilder.Entity("EKR_AuthorizeService.Entities.Session", b =>
                 {
@@ -54,18 +31,30 @@ namespace EKR_AuthorizeService.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<byte[]>("ConnectionInfo")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("DeviceInfo")
+                    b.Property<byte[]>("EncryptedAESKey")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("bytea");
 
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<byte[]>("IV")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
                     b.Property<bool>("IsRevoked")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("KeyVersion")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("RefreshToken")
                         .IsRequired()
@@ -110,17 +99,6 @@ namespace EKR_AuthorizeService.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("EKR_AuthorizeService.Entities.Log", b =>
-                {
-                    b.HasOne("EKR_AuthorizeService.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("EKR_AuthorizeService.Entities.Session", b =>

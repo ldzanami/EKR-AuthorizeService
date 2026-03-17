@@ -17,7 +17,7 @@ namespace EKR_AuthorizeService.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.2")
+                .HasAnnotation("ProductVersion", "10.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -28,18 +28,30 @@ namespace EKR_AuthorizeService.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<string>("ConnectionInfo")
+                    b.Property<byte[]>("ConnectionInfo")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("bytea");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<byte[]>("EncryptedAESKey")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
                     b.Property<DateTime>("ExpiresAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<byte[]>("IV")
+                        .IsRequired()
+                        .HasColumnType("bytea");
+
                     b.Property<bool>("IsRevoked")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("KeyVersion")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("RefreshToken")
                         .IsRequired()
