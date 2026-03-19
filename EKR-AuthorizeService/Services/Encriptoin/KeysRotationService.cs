@@ -98,8 +98,8 @@ namespace EKR_AuthorizeService.Services.Encriptoin
             {
                 foreach (var session in sessions)
                 {
-                    var decrAes = Encoding.UTF8.GetString(RSAEncryptorService.Decrypt(session.EncryptedAESKey, keyVersion));
-                    session.EncryptedAESKey = RSAEncryptorService.Encrypt(decrAes);
+                    var decrAes = Encoding.UTF8.GetString(_RSAEncryptorService.Decrypt(session.EncryptedAESKey, keyVersion));
+                    session.EncryptedAESKey = _RSAEncryptorService.Encrypt(decrAes);
                     session.KeyVersion = _configuration["CurrentKeyVersion"]!;
                 }
 
@@ -113,7 +113,7 @@ namespace EKR_AuthorizeService.Services.Encriptoin
             {
                 foreach (var session in sessions)
                 {
-                    session.EncryptedAESKey = RSAEncryptorService.Decrypt(session.EncryptedAESKey, "current");
+                    session.EncryptedAESKey = _RSAEncryptorService.Decrypt(session.EncryptedAESKey, "current");
                 }
 
                 Log.Information("Generate RSA keys");
@@ -127,7 +127,7 @@ namespace EKR_AuthorizeService.Services.Encriptoin
 
                 foreach (var session in sessions)
                 {
-                    session.EncryptedAESKey = RSAEncryptorService.Encrypt(Encoding.UTF8.GetString(session.EncryptedAESKey));
+                    session.EncryptedAESKey = _RSAEncryptorService.Encrypt(Encoding.UTF8.GetString(session.EncryptedAESKey));
                 }
 
                 await _sessionRepository.UpdateSessionsRangeAsync(sessions);
