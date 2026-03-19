@@ -17,7 +17,7 @@ namespace EKR_AuthorizeService.Handlers
             AESEncryptPack AESPack,
             CancellationToken ct)
         {
-            await _authService.RevokeAllSessionsAsync(Guid.Parse(decryptedContent), requestId);
+            await _authService.RevokeAllSessionsAsync(Guid.Parse(decryptedContent.Trim("\"").ToString()), requestId);
             return new { success = true };
         }
     }

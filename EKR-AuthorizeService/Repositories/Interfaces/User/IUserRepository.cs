@@ -24,13 +24,5 @@
         /// </summary>
         /// <param name="user">Сущность пользователя.</param>
         Task CreateUserAsync(Entities.User user);
-
-        /// <summary>
-        /// Проверяет правильный ли пароль.
-        /// </summary>
-        /// <param name="password">Пароль пользователя.</param>
-        /// <param name="hash">Хеш пароля пользователя.</param>
-        /// <returns>true если пароль верен; иначе false.</returns>
-        bool VerifyPassword(string password, byte[] hash);
     }
 }

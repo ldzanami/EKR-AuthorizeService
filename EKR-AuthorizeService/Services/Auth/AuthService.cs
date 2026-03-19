@@ -5,10 +5,8 @@ using EKR_AuthorizeService.Services.Interfaces.Encription;
 using EKR_Shared.Auth.Post.Incoming;
 using EKR_Shared.Auth.Post.Response;
 using EKR_Shared.Auxiliary;
-using EKR_Shared.Services.Encryption;
 using EKR_Shared.Services.Interfaces.Encryption;
 using EKR_Shared.Services.Interfaces.Infrastructure;
-using Serilog;
 
 namespace EKR_AuthorizeService.Services.Auth
 {
@@ -75,6 +73,7 @@ namespace EKR_AuthorizeService.Services.Auth
         /// </summary>
         /// <param name="dto">Данные для авторизации пользователя.</param>
         /// <param name="requestId">Id запроса.</param>
+        /// <param name="AESPack">AES пак для шифровки и расшифровки</param>
         /// <returns>JWT токен при успешной авторизации.</returns>
         public async Task<AuthResponseDto> AuthorizationAsync(AuthorizationDto dto, AESEncryptPack AESPack, string requestId)
         {
@@ -87,7 +86,7 @@ namespace EKR_AuthorizeService.Services.Auth
                     throw new UnauthorizedAccessException("Неверный логин или пароль.");
                 }
 
-                bool isPasswordValid = _userRepository.VerifyPassword(dto.Password, user.PasswordHash);
+                bool isPasswordValid = _passwordHashService.VerifyPassword(dto.Password, user.PasswordHash);
 
                 if (!isPasswordValid)
                 {
@@ -228,6 +227,7 @@ namespace EKR_AuthorizeService.Services.Auth
         /// </summary>
         /// <param name="userId">Id пользователя.</param>
         /// <param name="requestId">Id запроса.</param>
+        /// <param name="AESPack">AES пак для шифровки и расшифровки</param>
         /// <returns>Коллекция активных сессий пользователя.</returns>
         public async Task<ICollection<GetSessionResponseDto>> GetActiveUserSessionsAsync(Guid userId, AESEncryptPack AESPack, string requestId)
         {

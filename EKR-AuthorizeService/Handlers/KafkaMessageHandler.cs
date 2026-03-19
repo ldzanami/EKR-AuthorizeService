@@ -7,7 +7,6 @@ using EKR_Shared.Services.Interfaces.Helpers;
 using EKR_Shared.Services.Interfaces.Infrastructure;
 using EKR_Shared.Auxiliary;
 using System.Text.Json;
-using Serilog;
 
 namespace EKR_AuthorizeService.Handlers
 {

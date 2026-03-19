@@ -120,5 +120,15 @@ namespace EKR_AuthorizeService.Repositories.User
             _appDbContext.Sessions.Remove(s);
             await _appDbContext.SaveChangesAsync();
         }
+
+        /// <summary>
+        /// Асинхронно получает все сессии с данной версией ключа.
+        /// </summary>
+        /// <param name="keyVersion">Версия ключа RSA.</param>
+        /// <returns>Коллекция сессий.</returns>
+        public async Task<ICollection<Session>> GetSessionsByKeyVersionAsync(string keyVersion)
+        {
+            return await _appDbContext.Sessions.Where(s => s.KeyVersion == keyVersion).ToListAsync();
+        }
     }
 }

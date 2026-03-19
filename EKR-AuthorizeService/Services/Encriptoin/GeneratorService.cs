@@ -19,22 +19,5 @@ namespace EKR_AuthorizeService.Services.Encriptoin
             RandomNumberGenerator.Fill(salt);
             return salt;
         }
-
-        /// <summary>
-        /// Генерирует RSA ключевую пару.
-        /// </summary>
-        /// <param name="keySize">Размер ключа в битах (2048 или 4096).</param>
-        /// <returns>Кортеж, содержащий приватный ключ в бинарном виде и публичный ключ в Base64.</returns>
-        public (byte[] PrivateKey, string PublicKey) GenerateRSAKeyPair(int keySize)
-        {
-            using var rsa = RSA.Create(keySize);
-
-            var privateKey = rsa.ExportRSAPrivateKey();
-
-            var publicKeyBytes = rsa.ExportRSAPublicKey();
-            var publicKeyBase64 = Convert.ToBase64String(publicKeyBytes);
-
-            return (privateKey, publicKeyBase64);
-        }
     }
 }

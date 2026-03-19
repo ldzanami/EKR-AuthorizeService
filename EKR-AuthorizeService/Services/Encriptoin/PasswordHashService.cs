@@ -38,5 +38,16 @@ namespace EKR_AuthorizeService.Services.Encriptoin
             }
             return System.Text.Encoding.UTF8.GetBytes(hashString);
         }
+
+        /// <summary>
+        /// Проверяет правильный ли пароль.
+        /// </summary>
+        /// <param name="password">Пароль пользователя.</param>
+        /// <param name="hash">Хеш пароля пользователя.</param>
+        /// <returns>true если пароль верен; иначе false.</returns>
+        public bool VerifyPassword(string password, byte[] hash)
+        {
+            return Argon2.Verify(System.Text.Encoding.UTF8.GetString(hash), password);
+        }
     }
 }

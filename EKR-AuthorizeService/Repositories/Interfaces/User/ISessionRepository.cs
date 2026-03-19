@@ -73,5 +73,12 @@ namespace EKR_AuthorizeService.Repositories.Interfaces.User
         /// <param name="userId">Id пользователя.</param>
         /// <returns>Коллекция активных сессий пользователя.</returns>
         Task<ICollection<Session>> GetActiveUserSessionsAsync(Guid userId);
+
+        /// <summary>
+        /// Асинхронно получает все сессии с данной версией ключа.
+        /// </summary>
+        /// <param name="keyVersion">Версия ключа RSA.</param>
+        /// <returns>Коллекция сессий.</returns>
+        Task<ICollection<Session>> GetSessionsByKeyVersionAsync(string keyVersion);
     }
 }
