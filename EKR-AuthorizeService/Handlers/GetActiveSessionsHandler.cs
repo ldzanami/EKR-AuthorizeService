@@ -13,11 +13,10 @@ namespace EKR_AuthorizeService.Handlers
 
         public async Task<object?> HandleAsync(
             string decryptedContent,
-            string requestId,
             AESEncryptPack AESPack,
             CancellationToken ct)
         {
-            return await _authService.GetActiveUserSessionsAsync(Guid.Parse(decryptedContent), AESPack, requestId);
+            return await _authService.GetActiveUserSessionsAsync(Guid.Parse(decryptedContent), AESPack);
         }
     }
 }

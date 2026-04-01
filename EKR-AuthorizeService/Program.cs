@@ -55,8 +55,11 @@ namespace EKR_AuthorizeService
                 builder.Configuration["Jwt:AccessTokenLifetimeMinutes"] = Environment.GetEnvironmentVariable("JWT_ACCESS_TOKEN_LIFETIME") ?? builder.Configuration["Jwt:AccessTokenLifetimeMinutes"];
                 builder.Configuration["Jwt:RefreshTokenLifetimeDays"] = Environment.GetEnvironmentVariable("JWT_REFRESH_TOKEN_LIFETIME") ?? builder.Configuration["Jwt:RefreshTokenLifetimeDays"];
                 builder.Configuration["AllowedHosts"] = Environment.GetEnvironmentVariable("ALLOWED_HOSTS") ?? builder.Configuration["AllowedHosts"];
+                builder.Configuration["SelfId"] = Environment.GetEnvironmentVariable("SELF_ID") ?? builder.Configuration["SelfId"];
+                builder.Configuration["RotationTime"] = Environment.GetEnvironmentVariable("ROTATION_TIME") ?? builder.Configuration["RotationTime"];
 
-                
+
+
                 builder.Services.AddSerilog();
                 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration["ConnectionString:Default"]));
                 builder.Services.AddScoped<IUserRepository, UserRepository>();

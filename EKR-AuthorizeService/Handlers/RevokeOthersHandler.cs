@@ -15,7 +15,6 @@ namespace EKR_AuthorizeService.Handlers
 
         public async Task<object?> HandleAsync(
             string decryptedContent,
-            string requestId,
             AESEncryptPack AESPack,
             CancellationToken ct)
         {
@@ -23,7 +22,7 @@ namespace EKR_AuthorizeService.Handlers
             {
                 PropertyNameCaseInsensitive = true
             });
-            await _authService.RevokeOtherSessionsAsync(dto!, requestId);
+            await _authService.RevokeOtherSessionsAsync(dto!);
             return new { success = true };
         }
     }

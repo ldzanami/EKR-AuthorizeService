@@ -6,7 +6,6 @@ using EKR_Shared.Auth.Post.Incoming;
 using EKR_Shared.Auth.Post.Response;
 using EKR_Shared.Auxiliary;
 using EKR_Shared.Services.Interfaces.Encryption;
-using EKR_Shared.Services.Interfaces.Infrastructure;
 
 namespace EKR_AuthorizeService.Services.Auth
 {
@@ -18,12 +17,10 @@ namespace EKR_AuthorizeService.Services.Auth
                              IPasswordHashService passwordHashService,
                              ISessionService sessionService,
                              ISessionRepository sessionRepository,
-                             IKafkaProducerService kafkaProducerService,
                              IAESEncryptorService AESEncryptorService,
                              IRSAEncryptorService RSAEncryptorService,
                              IConfiguration configuration) : IAuthService
     {
-        private readonly IKafkaProducerService _kafkaProducerService = kafkaProducerService;
         private readonly IUserRepository _userRepository = userRepository;
         private readonly IGeneratorService _generatorService = generatorService;
         private readonly IPasswordHashService _passwordHashService = passwordHashService;
@@ -37,8 +34,7 @@ namespace EKR_AuthorizeService.Services.Auth
         /// Асинхронно регистрирует нового пользователя в системе.
         /// </summary>
         /// <param name="dto">Данные для регистрации пользователя.</param>
-        /// <param name="requestId">Id запроса.</param>
-        public async Task<bool> RegisterAsync(RegisterRequestDto dto, string requestId)
+        public async Task<bool> RegisterAsync(RegisterRequestDto dto)
         {
             try
             {
@@ -61,9 +57,8 @@ namespace EKR_AuthorizeService.Services.Auth
 
                 return true;
             }
-            catch(Exception ex)
+            catch
             {
-                await _kafkaProducerService.GiveAnswerAsync(new { ex.Message, Type = ex.GetType() }.ToString()!, partition: requestId);
                 throw;
             }
         }
@@ -72,10 +67,9 @@ namespace EKR_AuthorizeService.Services.Auth
         /// Асинхронно авторизует пользователя и выдает JWT токен.
         /// </summary>
         /// <param name="dto">Данные для авторизации пользователя.</param>
-        /// <param name="requestId">Id запроса.</param>
         /// <param name="AESPack">AES пак для шифровки и расшифровки</param>
         /// <returns>JWT токен при успешной авторизации.</returns>
-        public async Task<AuthResponseDto> AuthorizationAsync(AuthorizationDto dto, AESEncryptPack AESPack, string requestId)
+        public async Task<AuthResponseDto> AuthorizationAsync(AuthorizationDto dto, AESEncryptPack AESPack)
         {
             try
             {
@@ -136,9 +130,8 @@ namespace EKR_AuthorizeService.Services.Auth
                     Username = user.Username
                 };
             }
-            catch (Exception ex)
+            catch
             {
-                await _kafkaProducerService.GiveAnswerAsync(new { ex.Message, Type = ex.GetType() }.ToString()!, partition: requestId);
                 throw;
             }
 
@@ -148,9 +141,8 @@ namespace EKR_AuthorizeService.Services.Auth
         /// Асинхронное обновление токенов.
         /// </summary>
         /// <param name="incomingRefreshToken">Текущий refresh токен.</param>
-        /// <param name="requestId">Id запроса.</param>
         /// <returns>Dto с новыми токенами.</returns>
-        public async Task<RefreshDto> RefreshAsync(string incomingRefreshToken, string requestId)
+        public async Task<RefreshDto> RefreshAsync(string incomingRefreshToken)
         {
             try
             {
@@ -158,9 +150,8 @@ namespace EKR_AuthorizeService.Services.Auth
 
                 return result;
             }
-            catch (Exception ex)
+            catch
             {
-                await _kafkaProducerService.GiveAnswerAsync(new { ex.Message, Type = ex.GetType() }.ToString()!, partition: requestId);
                 throw;
             }
         }
@@ -169,17 +160,15 @@ namespace EKR_AuthorizeService.Services.Auth
         /// Асинхронный разлогин конкретной сессии.
         /// </summary>
         /// <param name="sessionId">Id сессии, которую надо прервать.</param>
-        /// <param name="requestId">Id запроса.</param>
-        public async Task<bool> RevokeSessionAsync(Guid sessionId, string requestId)
+        public async Task<bool> RevokeSessionAsync(Guid sessionId)
         {
             try
             {
                 await _sessionService.RevokeSessionAsync(sessionId);
                 return true;
             }
-            catch (Exception ex)
+            catch
             {
-                await _kafkaProducerService.GiveAnswerAsync(new { ex.Message, Type = ex.GetType() }.ToString()!, partition: requestId);
                 throw;
             }
         }
@@ -188,17 +177,15 @@ namespace EKR_AuthorizeService.Services.Auth
         /// Асинхронный разлогин всех сессий пользователя, кроме указанной.
         /// </summary>
         /// <param name="dto">Id пользователя + Id сессии, которую надо оставить.</param>
-        /// <param name="requestId">Id запроса.</param>
-        public async Task<bool> RevokeOtherSessionsAsync(RevokeOtherSessionsDto dto, string requestId)
+        public async Task<bool> RevokeOtherSessionsAsync(RevokeOtherSessionsDto dto)
         {
             try
             {
                 await _sessionService.RevokeOtherSessionsAsync(dto.UserId, dto.KeepSessionId);
                 return true;
             }
-            catch (Exception ex)
+            catch
             {
-                await _kafkaProducerService.GiveAnswerAsync(new { ex.Message, Type = ex.GetType() }.ToString()!, partition: requestId);
                 throw;
             }
         }
@@ -207,17 +194,15 @@ namespace EKR_AuthorizeService.Services.Auth
         /// Асинхронный разлогин всех сессий пользователя.
         /// </summary>
         /// <param name="userId">Id пользователя.</param>
-        /// <param name="requestId">Id запроса.</param>
-        public async Task<bool> RevokeAllSessionsAsync(Guid userId, string requestId)
+        public async Task<bool> RevokeAllSessionsAsync(Guid userId)
         {
             try
             {
                 await _sessionService.RevokeAllSessionsAsync(userId);
                 return true;
             }
-            catch (Exception ex)
+            catch
             {
-                await _kafkaProducerService.GiveAnswerAsync(new { ex.Message, Type = ex.GetType() }.ToString()!, partition: requestId);
                 throw;
             }
         }
@@ -226,10 +211,9 @@ namespace EKR_AuthorizeService.Services.Auth
         /// Асинхронно получает коллекцию активных сессий пользователя.
         /// </summary>
         /// <param name="userId">Id пользователя.</param>
-        /// <param name="requestId">Id запроса.</param>
         /// <param name="AESPack">AES пак для шифровки и расшифровки</param>
         /// <returns>Коллекция активных сессий пользователя.</returns>
-        public async Task<ICollection<GetSessionResponseDto>> GetActiveUserSessionsAsync(Guid userId, AESEncryptPack AESPack, string requestId)
+        public async Task<ICollection<GetSessionResponseDto>> GetActiveUserSessionsAsync(Guid userId, AESEncryptPack AESPack)
         {
             try
             {
@@ -244,9 +228,8 @@ namespace EKR_AuthorizeService.Services.Auth
                     UserId = s.UserId
                 }).ToList();
             }
-            catch (Exception ex)
+            catch
             {
-                await _kafkaProducerService.GiveAnswerAsync(new { ex.Message, Type = ex.GetType() }.ToString()!, partition: requestId);
                 throw;
             }
         }

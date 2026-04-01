@@ -24,7 +24,7 @@ namespace EKR_AuthorizeService.Handlers
         private readonly IAESEncryptorService _AESEncryptorService = AESEncryptorService;
         private readonly IHashCheckingService _hashCheckingService = hashCheckingService;
 
-        public async Task HandleAsync(Message<string, string> message, CancellationToken ct)
+        public async Task<bool> HandleAsync(Message<string, string> message, CancellationToken ct)
         {
             try
             {
@@ -55,7 +55,6 @@ namespace EKR_AuthorizeService.Handlers
                 if (_postHandlers.TryGetValue(package.Type, out var postHandler))
                 {
                     result = await postHandler!.HandleAsync(content,
-                                                            message.Key,
                                                             new AESEncryptPack
                                                             {
                                                                 AESKey = aesKey,
@@ -76,36 +75,41 @@ namespace EKR_AuthorizeService.Handlers
                 if (aesKey.Length > 0 && !(result is bool))
                 {
                     await SendToKafka(result!,
+                                      package.RequestId.ToString(),
                                       message.Key,
                                       aesKey,
                                       package.IV);
                 }
                 else
                 {
-                    await SendToKafka(result!, message.Key);
+                    await SendToKafka(result!, package.RequestId.ToString(), message.Key);
                 }
-
+                return true;
                
             }
             catch(InvalidOperationException ex)
             {
-                await _kafkaProducerService.GiveAnswerAsync(new ClientSideException(ex.Message).ToString()!, partition: message.Key);
+                var package = JsonSerializer.Deserialize<GeneralPackageTemplate>(message.Value)!;
+                await _kafkaProducerService.GiveAnswerAsync(new ClientSideException(ex.Message).ToString()!, package.RequestId.ToString());
+                return false;
             }
             catch(Exception ex)
             {
-                await _kafkaProducerService.GiveAnswerAsync(new ServerSideException(ex.Message, ex).ToString(), partition: message.Key);
+                var package = JsonSerializer.Deserialize<GeneralPackageTemplate>(message.Value)!;
+                await _kafkaProducerService.GiveAnswerAsync(new ServerSideException(ex.Message, ex).ToString(), package.RequestId.ToString());
+                return false;
             }
         }
 
-        private async Task SendToKafka(object result, string requestId, byte[] aesKey, string IV)
+        private async Task SendToKafka(object result, string requestId, string partition, byte[] aesKey, string IV)
         {
             var answer = _AESEncryptorService.Encrypt(JsonSerializer.Serialize(result), aesKey, Convert.FromBase64String(IV));
-            await _kafkaProducerService.GiveAnswerAsync(JsonSerializer.Serialize(answer), partition: requestId);
+            await _kafkaProducerService.GiveAnswerAsync(JsonSerializer.Serialize(answer), requestId);
         }
 
-        private async Task SendToKafka(object result, string requestId)
+        private async Task SendToKafka(object result, string requestId, string partition)
         {
-            await _kafkaProducerService.GiveAnswerAsync(JsonSerializer.Serialize(result), partition: requestId);
+            await _kafkaProducerService.GiveAnswerAsync(JsonSerializer.Serialize(result), requestId);
         }
     }
 }

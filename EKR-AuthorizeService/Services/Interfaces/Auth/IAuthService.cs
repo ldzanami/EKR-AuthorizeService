@@ -13,54 +13,47 @@ namespace EKR_AuthorizeService.Services.Interfaces.Auth
         /// Асинхронно регистрирует нового пользователя в системе.
         /// </summary>
         /// <param name="dto"> Данные для регистрации пользователя. </param>
-        /// <param name="requestId">Id запроса.</param>
-        Task<bool> RegisterAsync(RegisterRequestDto dto, string requestId);
+        Task<bool> RegisterAsync(RegisterRequestDto dto);
 
         /// <summary>
         /// Асинхронно авторизует пользователя и выдает JWT токен.
         /// </summary>
         /// <param name="dto">Данные для авторизации пользователя.</param>
-        /// <param name="requestId">Id запроса.</param>
         /// <param name="AESPack">AES пак для шифровки и расшифровки</param>
         /// <returns>JWT токен при успешной авторизации.</returns>
-        Task<AuthResponseDto> AuthorizationAsync(AuthorizationDto dto, AESEncryptPack AESPack, string requestId);
+        Task<AuthResponseDto> AuthorizationAsync(AuthorizationDto dto, AESEncryptPack AESPack);
 
         /// <summary>
         /// Асинхронное обновление токенов.
         /// </summary>
         /// <param name="incomingRefreshToken">Текущий refresh токен.</param>
-        /// <param name="requestId">Id запроса.</param>
         /// <returns>Dto с новыми токенами.</returns>
-        Task<RefreshDto> RefreshAsync(string incomingRefreshToken, string requestId);
+        Task<RefreshDto> RefreshAsync(string incomingRefreshToken);
 
         /// <summary>
         /// Асинхронный разлогин конкретной сессии.
         /// </summary>
         /// <param name="sessionId">Id сессии, которую надо прервать.</param>
-        /// <param name="requestId">Id запроса.</param>
-        Task<bool> RevokeSessionAsync(Guid sessionId, string requestId);
+        Task<bool> RevokeSessionAsync(Guid sessionId);
 
         /// <summary>
         /// Асинхронный разлогин всех сессий пользователя, кроме указанной.
         /// </summary>
         /// <param name="dto">Id пользователя + Id сессии, которую надо оставить.</param>
-        /// <param name="requestId">Id запроса.</param>
-        Task<bool> RevokeOtherSessionsAsync(RevokeOtherSessionsDto dto, string requestId);
+        Task<bool> RevokeOtherSessionsAsync(RevokeOtherSessionsDto dto);
 
         /// <summary>
         /// Асинхронный разлогин всех сессий пользователя.
         /// </summary>
         /// <param name="userId">Id пользователя.</param>
-        /// <param name="requestId">Id запроса.</param>
-        Task<bool> RevokeAllSessionsAsync(Guid userId, string requestId);
+        Task<bool> RevokeAllSessionsAsync(Guid userId);
 
         /// <summary>
         /// Асинхронно получает коллекцию активных сессий пользователя.
         /// </summary>
         /// <param name="userId">Id пользователя.</param>
-        /// <param name="requestId">Id запроса.</param>
         /// <param name="AESPack">AES пак для шифровки и расшифровки</param>
         /// <returns>Коллекция активных сессий пользователя.</returns>
-        Task<ICollection<GetSessionResponseDto>> GetActiveUserSessionsAsync(Guid userId, AESEncryptPack AESPack, string requestId);
+        Task<ICollection<GetSessionResponseDto>> GetActiveUserSessionsAsync(Guid userId, AESEncryptPack AESPack);
     }
 }

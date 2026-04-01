@@ -1,6 +1,5 @@
 ﻿using EKR_AuthorizeService.Repositories.Interfaces.User;
 using EKR_AuthorizeService.Services.Interfaces.Encription;
-using EKR_Shared.Services.Encryption;
 using EKR_Shared.Services.Interfaces.Encryption;
 using Serilog;
 using System.Security.Cryptography;
@@ -43,7 +42,7 @@ namespace EKR_AuthorizeService.Services.Encriptoin
                 creationTime = File.GetCreationTime(keyFiles.First());
             }
 
-            if (keyFiles.Length == 0 || creationTime.AddMonths(6) <= DateTime.Now)
+            if (keyFiles.Length == 0 || creationTime.AddMonths(int.Parse(_configuration["RotationTime"]!)) <= DateTime.Now)
             {
                 if (keyFiles.Length != 0)
                 {

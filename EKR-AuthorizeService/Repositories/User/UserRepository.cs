@@ -1,5 +1,4 @@
-﻿using Isopoh.Cryptography.Argon2;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using EKR_AuthorizeService.Data;
 using EKR_AuthorizeService.Repositories.Interfaces.User;
 
